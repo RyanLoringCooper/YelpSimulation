@@ -17,6 +17,8 @@ public class populate {
 
     public static String businessString = "INSERT INTO Business (business_id,full_address,hours,open,categories,city,review_count,name,neighborhoods,longitude,state,stars,latitude,attributes) VALUES (";
     public static String[] businessValues = {"business_id", "full_address", "hours", "open", "categories", "city", "review_count", "name", "neighborhoods", "longitude", "state", "stars", "latitude", "attributes"};
+    public static String userString = "INSERT INTO YelpUsers (yelping_since, votes, review_count, name, user_id, friends, fans, average_stars, elite) VALUES (";
+    public static String[] userValues = {"yelping_since", "votes", "review_count", "name", "user_id", "friends", "fans", "average_stars", "elite"};
 
     public static String[] getJSONStringsFromFile(String filePath) throws FileNotFoundException, IOException {
         LinkedList<String> strings = new LinkedList<String>();
@@ -63,6 +65,36 @@ public class populate {
         return (JSONObject[]) jsonObjs.toArray();
     }
 
+    public static String getArrayInsert(String[] arr) {
+        String s = "";
+        for(int j = 0; j < arr.length; j++) {
+            s += "'" + arr[j] + "'";
+            if(j != arr.length-1) {
+                s += ",";
+            }
+        }
+        return s;
+    }
+
+    public static String getSingleAttributeInsert(Object attr) {
+		String s = "";
+		if(attr instanceof String) {
+			s += "'" + m.get(value) +"'"; 
+		} else if(attr instanceof Boolean) {
+			if((boolean)attr) {
+				s += "'true'";
+			} else {
+				s += "'false'";
+			}
+		} else if(attr instanceof Integer) {
+			s += Integer.toString((Integer) attr) + "";
+		} else {
+			System.err.print("Inserter wasn't prepared for ");
+			System.err.println(attr);
+		}
+		return s;
+    }
+
     public static String[] getBusinessInserts(JSONObject[] businesses) {
         String[] inserts = new String[businesses.length];
         for(int i = 0; i < inserts.length; i++) {
@@ -84,23 +116,11 @@ public class populate {
                     s += "),";
                 } else if(value.equals("categories")) {
                     s += "categoryTable(";
-                    String[] cats = (String[]) m.get(value);
-                    for(int j = 0; j < cats.length; j++) {
-                        s += "'" + cats[j] + "'";
-                        if(j != cats.length-1) {
-                            s += ",";
-                        }  
-                    }
+                    s += getArrayInsert((String[]) m.get(value));
                     s += "),";
                 } else if(value.equals("neighborhoods")) {
                     s += "neighborhoodTable(";
-                    String[] hoods = (String[]) m.get(value);
-                    for(int j = 0; j < hoods.length; j++) {
-                        s += "'" + hoods[j] + "'";
-                        if(j != hoods.length-1) {
-                            s += ",";
-                        }
-                    }
+                    s += getArrayInsert((String[]) m.get(value));
                     s += "),";
                 } else if(value.equals("attributes")) {
                     s += "attributeTable(";
@@ -108,21 +128,7 @@ public class populate {
                     String[] attrs = (String[]) attrsMap.keySet().toArray();
                     for(int j = 0; j < attrs.length; j++) {
                         s += "attribute_type('" + attrs[i] + "',";
-                        Object attr = attrsMap.get(attrs[i]);
-                        if(attr instanceof Boolean) {
-                            if((boolean)attr) {
-                                s += "'true'";
-                            } else {
-                                s += "'false'";
-                            }
-                        } else if(attr instanceof String) {
-                            s += "'" + (String) attr + "'";
-                        } else if(attr instanceof Integer) {
-                            s += Integer.toString((Integer) attr);
-                        } else {
-                            System.err.print("Inserter wasn't prepared for ");
-                            System.err.println(attr);
-                        }
+                        s += getSingleAttributeInsert(attrsMap.get(attrs[i]));
                         s += ")";
                         if(j != attrs.length-1) {
                             s += ",";
@@ -131,21 +137,8 @@ public class populate {
                     // attributes should be the last thing added to s, so no comma needed
                     s += ")";
                 } else {
-                    Object attr = m.get(value);
-                    if(attr instanceof String) {
-                        s += "'" + m.get(value) +"',"; 
-                    } else if(attr instanceof Boolean) {
-                        if((boolean)attr) {
-                            s += "'true',";
-                        } else {
-                            s += "'false',";
-                        }
-                    } else if(attr instanceof Integer) {
-                        s += Integer.toString((Integer) attr) + ",";
-                    } else {
-                        System.err.print("Inserter wasn't prepared for ");
-                        System.err.println(attr);
-                    }
+                    s += getSingleAttributeInsert(m.get(value));
+					s += ",";
                 }
             }
             s += ");";
@@ -154,17 +147,65 @@ public class populate {
         return inserts;
     }
 
+    public static String[] getUserInserts(JSONObject[] users) {
+        String[] inserts = new String[users.length];
+        for(int i = 0; i < inserts.length; i++) {
+            String s = new String(userString);
+            Map<String, Object> m = users[i].toMap();
+            for(String value : userValues) {
+                if(value.equals("votes")) {
+                    Map<String, Object> votes = (Map<String, Integer>) m.get(value);
+                    s += "votes_type(";
+                    s += Integer.toString(votes.get("funny")) + ",";
+                    s += Integer.toString(votes.get("useful")) + ",";
+                    s += Integer.toString(votes.get("cool")) + "),";
+                } else if(value.equals("friends")) {
+                    s += "friendsTable(";
+                    s += getArrayInsert((String[]) m.get(value));
+                    s += "),";
+                } else if(value.equals("elite")) {
+                    s += "eliteTable(";
+                    s += getArrayInsert((String[]) m.get(value));
+                    // elite is the last value, so no trailing comma is necessary
+                    s += ")";
+                } else {
+                    s += getSingleAttributeInsert(m.get(value));
+					s += ",";
+                }
+            }
+        }
+    }
+
+    public static String[] getReviewInserts(JSONObject[] reviews) {
+
+    }
+
+    public static void handleInserts(String[] inserts) {
+
+    }
+
     public static void insertBusinesses(JSONObject[] businesses) {
-        String[] inserts = getBusinessInserts(businesses);
-        // TODO write jdbc stuff 
+        if(businesses == null) {
+            System.err.println("No business objects were generated from an input file.");
+            return;
+        }
+        handleInserts(getBusinessInserts(businesses));
     }
 
     public static void insertUsers(JSONObject[] users) {
-
+        if(users == null) {
+            System.err.println("No users objects were generated from an input file.");
+            return;
+        }
+        handleInserts(getUserInserts(users));
     }
 
     public static void insertReviews(JSONObject[] reviews) {
-
+        if(reviews == null) {
+            System.err.println("No reviews objects were generated from an input file.");
+            return;
+        }
+        handleInserts(getReviewInserts(reviews));
     }
 
     public static void main(String[] args) {

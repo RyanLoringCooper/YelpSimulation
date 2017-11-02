@@ -71,7 +71,7 @@ CREATE TABLE Review (
 );
 
 CREATE TABLE YelpUser ( /* compliments is missing*/
-    yelping_since           DATE NOT NULL,
+    yelping_since           VARCHAR(16) NOT NULL,
     votes                   votes_type,
     review_count            INTEGER DEFAULT 0,
     name                    VARCHAR(32) NOT NULL,
