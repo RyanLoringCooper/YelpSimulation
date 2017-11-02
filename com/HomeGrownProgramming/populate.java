@@ -13,15 +13,16 @@ import java.util.LinkedList;
 
 import oracle.jdbc.*;
 
-public class Populate {
+public class populate {
 
     public static String businessString = "INSERT INTO Business (business_id,full_address,hours,open,categories,city,review_count,name,neighborhoods,longitude,state,stars,latitude,attributes) VALUES (";
     public static String[] businessValues = {"business_id", "full_address", "hours", "open", "categories", "city", "review_count", "name", "neighborhoods", "longitude", "state", "stars", "latitude", "attributes"};
 
-    public static String[] getJSONStringsFromFile(String filepath) throws FileNotFoundException, IOException {
+    public static String[] getJSONStringsFromFile(String filePath) throws FileNotFoundException, IOException {
         LinkedList<String> strings = new LinkedList<String>();
         String temp = "";
         int braces = 0;
+        FileInputStream f = new FileInputStream(filePath);
         while(f.available() > 0) {
             int b = f.read();
             if(b == '{') {
@@ -44,8 +45,7 @@ public class Populate {
     public static JSONObject[] createJSONObject(String filePath) {
         LinkedList<JSONObject> jsonObjs = new LinkedList<JSONObject>();
         try {
-            FileInputStream f = new FileInputStream(filePath);
-            String[] objs = getJSONStringsFromFile(f);
+            String[] objs = getJSONStringsFromFile(filePath);
             for(String obj : objs) {
                 jsonObjs.add(new JSONObject(obj)); // TODO
             }
@@ -71,11 +71,11 @@ public class Populate {
             for(String value : businessValues) {
                 if(value.equals("hours")) {
                     s += "hoursTable(";
-                    Map<String, Object> hours = m.get(value);
+                    Map<String, Object> hours = (Map<String, Object>) m.get(value);
                     String[] days = (String[]) hours.keySet().toArray();
                     for(int j = 0; j < days.length; j++) {
                         s += "hours_type('" + days[j] + "',";
-                        Map<String, Object> dayMap = hours.get(days[j]);
+                        Map<String, Object> dayMap = (Map<String, Object>) hours.get(days[j]);
                         s += "'" + (String) dayMap.get("open") + "','" + (String) dayMap.get("close") + "')";
                         if(j != days.length-1) {
                             s += ",";
@@ -87,7 +87,7 @@ public class Populate {
                     String[] cats = (String[]) m.get(value);
                     for(int j = 0; j < cats.length; j++) {
                         s += "'" + cats[j] + "'";
-                        if(j != days.length-1) {
+                        if(j != cats.length-1) {
                             s += ",";
                         }  
                     }
@@ -104,20 +104,20 @@ public class Populate {
                     s += "),";
                 } else if(value.equals("attributes")) {
                     s += "attributeTable(";
-                    Map<String, Object> attrsMap = m.get(value);
+                    Map<String, Object> attrsMap = (Map<String, Object>) m.get(value);
                     String[] attrs = (String[]) attrsMap.keySet().toArray();
                     for(int j = 0; j < attrs.length; j++) {
                         s += "attribute_type('" + attrs[i] + "',";
                         Object attr = attrsMap.get(attrs[i]);
-                        if(attr instanceOf Boolean) {
+                        if(attr instanceof Boolean) {
                             if((boolean)attr) {
                                 s += "'true'";
                             } else {
                                 s += "'false'";
                             }
-                        } else if(attr instanceOf String) {
+                        } else if(attr instanceof String) {
                             s += "'" + (String) attr + "'";
-                        } else if(attr instanceOf Integer) {
+                        } else if(attr instanceof Integer) {
                             s += Integer.toString((Integer) attr);
                         } else {
                             System.err.print("Inserter wasn't prepared for ");
@@ -129,18 +129,18 @@ public class Populate {
                         }
                     }
                     // attributes should be the last thing added to s, so no comma needed
-                    s += ")"
+                    s += ")";
                 } else {
                     Object attr = m.get(value);
-                    if(attr instanceOf String) {
+                    if(attr instanceof String) {
                         s += "'" + m.get(value) +"',"; 
-                    } else if(attr instanceOf Boolean) {
+                    } else if(attr instanceof Boolean) {
                         if((boolean)attr) {
                             s += "'true',";
                         } else {
                             s += "'false',";
                         }
-                    } else if(attr instanceOf Integer) {
+                    } else if(attr instanceof Integer) {
                         s += Integer.toString((Integer) attr) + ",";
                     } else {
                         System.err.print("Inserter wasn't prepared for ");
@@ -168,12 +168,12 @@ public class Populate {
     }
 
     public static void main(String[] args) {
-        JSONObject[] business, reviews, users;
+        JSONObject[] business = null, reviews = null, users = null;
         for(String arg : args) {
             JSONObject[] jsonObj = createJSONObject(arg);
             if(jsonObj == null) {
                 System.err.println("Could not create a JSON object from " + arg);
-                return -1;
+                return;
             }
             if(arg.matches("[A-Za-z_]*business[A-Za-z_.]*")) {
                 business = jsonObj;
