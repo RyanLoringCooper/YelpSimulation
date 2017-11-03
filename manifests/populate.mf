@@ -1,4 +1,5 @@
 Manifest-Version: 1.0 
-Class-Path: ./JSON.jar ./ojdbc6.jar
+Rsrc-Class-Path: ./ JSON.jar ojdbc6.jar
+Class-Path: .
 Created-By: 1.8.0_152 (Oracle Corporation)
 Main-Class: com/HomeGrownProgramming/populate

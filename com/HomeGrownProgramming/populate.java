@@ -15,10 +15,14 @@ import oracle.jdbc.*;
 
 public class populate {
 
+    public static final String helpText = "Usage:\njava -jar populate.jar -h hostname -p portNum jsonFile1 jsonFile2 jsonFile3 ...\n\t-h: specifies that a hostname is the next argument\n\t-p: specifies that a port number to connect to the host is the next argument\n";
     public static String businessString = "INSERT INTO Business (business_id,full_address,hours,open,categories,city,review_count,name,neighborhoods,longitude,state,stars,latitude,attributes) VALUES (";
     public static String[] businessValues = {"business_id", "full_address", "hours", "open", "categories", "city", "review_count", "name", "neighborhoods", "longitude", "state", "stars", "latitude", "attributes"};
     public static String userString = "INSERT INTO YelpUsers (yelping_since, votes, review_count, name, user_id, friends, fans, average_stars, elite) VALUES (";
     public static String[] userValues = {"yelping_since", "votes", "review_count", "name", "user_id", "friends", "fans", "average_stars", "elite"};
+    public static String reviewString = "INSERTS INTO Review (votes, user_id, review_id, stars, date_field, text, business_id) VALUES (";
+    public static String[] reviewValues = {"votes", "user_id", "review_id", "stars", "date_field", "text", "business_id"};
+    public static final String dbName = "oracle";
 
     public static String[] getJSONStringsFromFile(String filePath) throws FileNotFoundException, IOException {
         LinkedList<String> strings = new LinkedList<String>();
@@ -49,7 +53,7 @@ public class populate {
         try {
             String[] objs = getJSONStringsFromFile(filePath);
             for(String obj : objs) {
-                jsonObjs.add(new JSONObject(obj)); // TODO
+                jsonObjs.add(new JSONObject(obj)); 
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -79,7 +83,7 @@ public class populate {
     public static String getSingleAttributeInsert(Object attr) {
 		String s = "";
 		if(attr instanceof String) {
-			s += "'" + m.get(value) +"'"; 
+			s += "'" + attr +"'"; 
 		} else if(attr instanceof Boolean) {
 			if((boolean)attr) {
 				s += "'true'";
@@ -93,6 +97,14 @@ public class populate {
 			System.err.println(attr);
 		}
 		return s;
+    }
+
+    public static String getVotesInsert(Map<String, Integer> votes) {
+        String s = "votes_type(";
+        s += Integer.toString(votes.get("funny")) + ",";
+        s += Integer.toString(votes.get("useful")) + ",";
+        s += Integer.toString(votes.get("cool")) + ")";
+        return s;
     }
 
     public static String[] getBusinessInserts(JSONObject[] businesses) {
@@ -154,11 +166,8 @@ public class populate {
             Map<String, Object> m = users[i].toMap();
             for(String value : userValues) {
                 if(value.equals("votes")) {
-                    Map<String, Object> votes = (Map<String, Integer>) m.get(value);
-                    s += "votes_type(";
-                    s += Integer.toString(votes.get("funny")) + ",";
-                    s += Integer.toString(votes.get("useful")) + ",";
-                    s += Integer.toString(votes.get("cool")) + "),";
+                    s += getVotesInsert((Map<String, Integer>) m.get(value));
+                    s += ",";
                 } else if(value.equals("friends")) {
                     s += "friendsTable(";
                     s += getArrayInsert((String[]) m.get(value));
@@ -173,11 +182,30 @@ public class populate {
 					s += ",";
                 }
             }
+            s += ");";
         }
+        return inserts;
     }
 
     public static String[] getReviewInserts(JSONObject[] reviews) {
-
+        String[] inserts = new String[reviews.length];
+        for(int i = 0; i < inserts.length; i++) {
+            String s = new String(reviewString);
+            Map<String, Object> m = reviews[i].toMap();
+            for(String value : reviewValues) {
+                if(value.equals("votes")) {
+                    s += getVotesInsert((Map<String, Integer>) m.get(value));
+                } else {
+                    s += getSingleAttributeInsert(m.get(value));
+                }
+                // business_id is the last attribute, so append a comma if it is not business_id
+                if(!value.equals("business_id")) {
+                    s += ",";
+                }
+            }
+            s += ");";
+        }
+        return inserts;
     }
 
     public static void handleInserts(String[] inserts) {
@@ -208,9 +236,43 @@ public class populate {
         handleInserts(getReviewInserts(reviews));
     }
 
+    public static String[] getCredentials() {
+        String[] credentials = new String[2];
+        credentials[0] = "";
+        credentials[1] = "";
+        int index = 0;
+        try {
+            FileInputStream f = new FileInputStream("credentials");
+            while(f.available() > 0) {
+                int b = f.read();
+                if(b == '\n') {
+                    index++;
+                } else {
+                    credentials[index] += Integer.toString(b);
+                }
+            }
+        } catch (FileNotFoundException | IOException e) {
+            e.printStackTrace();
+        }       
+        return credentials;
+    }
+
     public static void main(String[] args) {
+        if(args.length < 4) {
+            System.err.println(helpText);
+        }
+        String hostname = null;
+        int port = -1;
         JSONObject[] business = null, reviews = null, users = null;
         for(String arg : args) {
+            if(hostname.equals("")) {
+                hostname = arg;
+                continue;
+            }
+            if(port == 0) {
+                port = Integer.parseInt(arg);
+                continue;
+            }
             JSONObject[] jsonObj = createJSONObject(arg);
             if(jsonObj == null) {
                 System.err.println("Could not create a JSON object from " + arg);
@@ -222,10 +284,37 @@ public class populate {
                 users = jsonObj;
             } else if(arg.matches("[A-Za-z_]*review[A-Za-z_.]*")) {
                 reviews = jsonObj;
+            } else if(arg.equals("-h")) { 
+                hostname = "";
+            } else if(arg.equals("-p")) {
+                port = 0;
             } else {
                 System.out.println(arg + " was not used.");
             }
         }
+        if(hostname == null) {
+            System.err.println("You must provide a hostname using the -h flag.");
+            System.err.println(helpText);
+            return;
+        }
+        if(port == -1) {
+            System.err.println("You must provide a port number using the -p flag.");
+            System.err.println(helpText);
+            return;
+        }
+        /*
+		try {
+            Class.forName("oracle.jdbc.driver.OracleDriver");
+            Class.forName("com.mysql.jdbc.Driver");
+        } catch (ClassNotFoundException cnfe) {
+            System.err.println("Error loading driver: " + cnfe);
+        }
+        */
+        String oracleURL = "jdbc:oracle:thin@" + host + ":" + port + ":" + dbName;
+        String mysqlURL = "jdbc:mysql://" + host + ":" + port + "/" + dbName;
+        String[] creds = getCredentials();
+        String username = creds[0], password = creds[1];
+        Connection conn = DriverManager.getConnection(oracleURL, username, password);
         insertBusinesses(business);
         insertUsers(users);
         insertReviews(reviews);
