@@ -1,6 +1,5 @@
 package com.RyanLoringCooper;
 
-import org.json.JSONTokener;
 import org.json.JSONObject;
 import org.json.JSONException;
 
@@ -11,19 +10,19 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-
+import java.sql.Statement;
 import java.util.Map;
 import java.util.LinkedList;
 
-import oracle.jdbc.*;
-
 public class populate {
 
-    private static final String helpText = "Usage:\njava -jar populate.jar -host hostname -port portNum [-user username -password password] jsonFile1 jsonFile2 jsonFile3 ...\n\t"
+    private static final String helpText = "Usage: java -jar populate.jar [-h|d] -host hostname -port portNum [-user username -password password] jsonFile1 jsonFile2 jsonFile3 ...\n\t"
+                                            +"-h: display this help text\n\t"
+                                            +"-d: display debug messages\n\t"
                                             +"-host: specifies that a hostname is the next argument\n\t"
                                             +"-port: specifies that a port number to connect to the host is the next argument\n\t"
                                             +"-user: specifies that the username to log into the database is the next argument\n\t"
-                                            +"-password: specifies that the password to log into the database is the next argument\n\t";
+                                            +"-password: specifies that the password to log into the database is the next argument\n";
     private static final String businessString = "INSERT INTO Business (business_id,full_address,hours,open,categories,city,review_count,name,neighborhoods,longitude,state,stars,latitude,attributes) VALUES (";
     private static final String[] businessValues = {"business_id", "full_address", "hours", "open", "categories", "city", "review_count", "name", "neighborhoods", "longitude", "state", "stars", "latitude", "attributes"};
     private static final String userString = "INSERT INTO YelpUsers (yelping_since, votes, review_count, name, user_id, friends, fans, average_stars, elite) VALUES (";
@@ -33,24 +32,28 @@ public class populate {
     private static final String dbName = "oracle";
     private String hostname = null, username = null, password = null, oracleURL = null, mysqlURL = null;
     private int port = -1;
-    private JSONObject[] business = null, reviews = null, users = null;
+    private JSONObject[] businesses = null, reviews = null, users = null;
     private Connection conn;
+    private boolean debug = false;
 
 
     private populate(String[] args) {
-        if(isValidArguments(args) && setCredentials() && setupDatabaseConnections()) {
+        if(isValidArguments(args) && setCredentials() && setupDatabaseConnection()) {
             handleInserts(getBusinessInserts());
             handleInserts(getUserInserts());
             handleInserts(getReviewInserts());
+            try {
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
         } else {
-            System.err.println("Improper usage.");
             System.err.println(helpText);
         }
     }
 
     private boolean isValidArguments(String[] args) {
         if(args.length < 4) {
-            System.err.println(helpText);
             return false;
         }
         for(int i = 0; i < args.length; i++) {
@@ -60,7 +63,7 @@ public class populate {
                 return false;
             }
             if(args[i].matches("[A-Za-z_]*business[A-Za-z_.]*")) {
-                business = jsonObj;
+                businesses = jsonObj;
             } else if(args[i].matches("[A-Za-z_]*user[A-Za-z_.]*")) {
                 users = jsonObj;
             } else if(args[i].matches("[A-Za-z_]*review[A-Za-z_.]*")) {
@@ -93,7 +96,11 @@ public class populate {
                     System.err.println("You must provide a password after -password flag (ie. '-password password')");
                     return false;
                 }
-            } else {
+            } else if(args[i].equals("-d")) {
+            	debug = true;
+        	} else if(args[i].equals("-h")) {
+        		return false;
+        	} else {
                 System.out.println(args[i] + " was not used.");
             }
         }
@@ -125,6 +132,7 @@ public class populate {
             e.printStackTrace();
             return false;
         }
+        return true;
     }
 
     private String[] getJSONStringsFromFile(String filePath) throws FileNotFoundException, IOException {
@@ -314,11 +322,22 @@ public class populate {
     }
 
     private void handleInserts(String[] inserts) {
-
+    	try {
+    		Statement statement = conn.createStatement();
+    		for(String insert : inserts) {
+    			if(debug) {
+    				System.out.println(insert);
+    			}
+    			statement.executeUpdate(insert);
+    		}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} 
     }
 
     private boolean setCredentials() {
         if(username == null || password == null) {
+        	System.out.println("Attempting to get database credentials from file.");
             String[] credentials = new String[2];
             credentials[0] = "";
             credentials[1] = "";
@@ -335,6 +354,7 @@ public class populate {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+                System.err.println("You must either have a file named credentials with the database credentials in it, or provide the credentials as command line arguments.");
                 return false;
             }       
             username = credentials[0];
@@ -344,6 +364,6 @@ public class populate {
     }
 
     public static void main(String[] args) {
-        new populate();
+        new populate(args);
     }
 }
