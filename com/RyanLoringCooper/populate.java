@@ -1,4 +1,4 @@
-package com.HomeGrownProgramming;
+package com.RyanLoringCooper;
 
 import org.json.JSONTokener;
 import org.json.JSONObject;
@@ -7,7 +7,9 @@ import org.json.JSONException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.LinkedList;
 
@@ -251,7 +253,7 @@ public class populate {
                     credentials[index] += Integer.toString(b);
                 }
             }
-        } catch (FileNotFoundException | IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }       
         return credentials;
@@ -310,11 +312,16 @@ public class populate {
             System.err.println("Error loading driver: " + cnfe);
         }
         */
-        String oracleURL = "jdbc:oracle:thin@" + host + ":" + port + ":" + dbName;
-        String mysqlURL = "jdbc:mysql://" + host + ":" + port + "/" + dbName;
+        String oracleURL = "jdbc:oracle:thin@" + hostname + ":" + port + ":" + dbName;
+        String mysqlURL = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName;
         String[] creds = getCredentials();
         String username = creds[0], password = creds[1];
-        Connection conn = DriverManager.getConnection(oracleURL, username, password);
+        try {
+			Connection conn = DriverManager.getConnection(oracleURL, username, password);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         insertBusinesses(business);
         insertUsers(users);
         insertReviews(reviews);
