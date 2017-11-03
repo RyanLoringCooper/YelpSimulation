@@ -13,9 +13,9 @@ CREATE OR REPLACE TYPE attribute_type as OBJECT (
 /
 
 CREATE OR REPLACE TYPE votes_type as OBJECT (
-    funny           INTEGER DEFAULT 0,
-    useful          INTEGER DEFAULT 0,
-    cool            INTEGER DEFAULT 0
+    funny           INTEGER,
+    useful          INTEGER,
+    cool            INTEGER
 );
 /
 
@@ -35,6 +35,7 @@ CREATE OR REPLACE TYPE friendsTable AS TABLE OF VARCHAR(128);
 /
 
 CREATE OR REPLACE TYPE eliteTable AS TABLE OF INTEGER;
+/
 
 /* Entities */
 CREATE TABLE Business (
@@ -58,18 +59,6 @@ NESTED TABLE categories STORE AS businessCategoriesTable
 NESTED TABLE attributes STORE AS businessAttributesTable
 NESTED TABLE neighborhoods STORE AS businessNeighborhoodsTable;
 
-CREATE TABLE Review (
-    votes                   votes_type,
-    user_id                 VARCHAR(128) NOT NULL,
-    review_id               VARCHAR(128) PRIMARY KEY,
-    stars                   INTEGER DEFAULT 0,
-    date_field              DATE NOT NULL,
-    text                    CLOB NOT NULL,
-    business_id             VARCHAR(128) NOT NULL
-    CONSTRAINT r_bid FOREIGN KEY (business_id) REFERENCES Business(business_id)
-    CONSTRAINT r_uid FOREIGN KEY (user_id) REFERENCES Business(user_id)
-);
-
 CREATE TABLE YelpUser ( /* compliments is missing*/
     yelping_since           VARCHAR(16) NOT NULL,
     votes                   votes_type,
@@ -83,3 +72,15 @@ CREATE TABLE YelpUser ( /* compliments is missing*/
 )
 NESTED TABLE friends STORE AS yelpUserFriendsTable,
 NESTED TABLE elite STORE AS yelpUserEliteTable;
+
+CREATE TABLE Review (
+    votes                   votes_type,
+    user_id                 VARCHAR(128) NOT NULL,
+    review_id               VARCHAR(128) PRIMARY KEY,
+    stars                   INTEGER DEFAULT 0,
+    date_field              DATE NOT NULL,
+    text                    CLOB NOT NULL,
+    business_id             VARCHAR(128) NOT NULL,
+    CONSTRAINT r_bid FOREIGN KEY (business_id) REFERENCES Business(business_id),
+    CONSTRAINT r_uid FOREIGN KEY (user_id) REFERENCES YelpUser(user_id)
+);
