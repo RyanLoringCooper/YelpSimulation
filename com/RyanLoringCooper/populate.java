@@ -16,9 +16,10 @@ import java.util.LinkedList;
 
 public class populate {
 
-    private static final String helpText = "Usage: java -jar populate.jar [-h|d] -host hostname -port portNum [-user username -password password] jsonFile1 jsonFile2 jsonFile3 ...\n\t"
+    private static final String helpText = "Usage: java -jar populate.jar [-h|d|j] -host hostname -port portNum [-user username -password password] jsonFile1 jsonFile2 jsonFile3 ...\n\t"
                                             +"-h: display this help text\n\t"
                                             +"-d: display debug messages\n\t"
+                                            +"-j: display JSON objects as they are being created"
                                             +"-host: specifies that a hostname is the next argument\n\t"
                                             +"-port: specifies that a port number to connect to the host is the next argument\n\t"
                                             +"-user: specifies that the username to log into the database is the next argument\n\t"
@@ -34,14 +35,20 @@ public class populate {
     private int port = -1;
     private JSONObject[] businesses = null, reviews = null, users = null;
     private Connection conn;
-    private boolean debug = false;
+    private boolean debug = false, showJson = false;
 
 
     private populate(String[] args) {
         if(isValidArguments(args) && setCredentials() && setupDatabaseConnection()) {
-            handleInserts(getBusinessInserts());
-            handleInserts(getUserInserts());
-            handleInserts(getReviewInserts());
+        	if(businesses != null) {
+        		handleInserts(getBusinessInserts());
+        	}
+        	if(users != null) {
+        		handleInserts(getUserInserts());
+        	}
+        	if(reviews != null) {
+				handleInserts(getReviewInserts());
+        	}
             try {
 				conn.close();
 			} catch (SQLException e) {
@@ -57,18 +64,7 @@ public class populate {
             return false;
         }
         for(int i = 0; i < args.length; i++) {
-            JSONObject[] jsonObj = createJSONObject(args[i]);
-            if(jsonObj == null) {
-                System.err.println("Could not create a JSON object from " + args[i]);
-                return false;
-            }
-            if(args[i].matches("[A-Za-z_]*business[A-Za-z_.]*")) {
-                businesses = jsonObj;
-            } else if(args[i].matches("[A-Za-z_]*user[A-Za-z_.]*")) {
-                users = jsonObj;
-            } else if(args[i].matches("[A-Za-z_]*review[A-Za-z_.]*")) {
-                reviews = jsonObj;
-            } else if(args[i].equals("-host")) { 
+        	if(args[i].equals("-host")) { 
                 if(i+1 < args.length) {
                     hostname = args[++i];
                 } else {
@@ -98,11 +94,30 @@ public class populate {
                 }
             } else if(args[i].equals("-d")) {
             	debug = true;
+            	System.out.println("Debugging messages will be displayed");
         	} else if(args[i].equals("-h")) {
         		return false;
+        	} else if(args[i].equals("-j")) {
+        		showJson = true;
         	} else {
-                System.out.println(args[i] + " was not used.");
-            }
+				JSONObject[] jsonObj = createJSONObjects(args[i]);
+				if(debug) {
+					System.out.println("Created JSON objects from " + args[i]);
+				}
+				if(jsonObj == null) {
+					System.err.println("Could not create a JSON object from " + args[i]);
+					return false;
+				}
+				if(args[i].matches("[/A-Za-z_]*business[A-Za-z_.]*")) {
+					businesses = jsonObj;
+				} else if(args[i].matches("[/A-Za-z_]*user[A-Za-z_.]*")) {
+					users = jsonObj;
+				} else if(args[i].matches("[/A-Za-z_]*review[A-Za-z_.]*")) {
+					reviews = jsonObj;
+				} else {
+					System.out.println(args[i] + " was not used.");
+				}
+        	}
         }
         if(hostname == null) {
             System.err.println("You must provide a hostname using the -host flag.");
@@ -111,6 +126,9 @@ public class populate {
         if(port == -1) {
             System.err.println("You must provide a port number using the -port flag.");
             return false;
+        }
+        if(debug) {
+        	System.out.println("Arguments parsed");
         }
         return true;
     }
@@ -138,28 +156,36 @@ public class populate {
     private String[] getJSONStringsFromFile(String filePath) throws FileNotFoundException, IOException {
         LinkedList<String> strings = new LinkedList<String>();
         String temp = "";
-        int braces = 0;
+        int braces = 0, quotes = 0;
         FileInputStream f = new FileInputStream(filePath);
         while(f.available() > 0) {
             int b = f.read();
-            if(b == '{') {
+            if(b == '{' && quotes == 0) {
                 braces++;
-            } else if(b == '}') {
+            } else if(b == '}' && quotes == 0) {
                 braces--;
-            } else if(braces == 0 && b == '\n') {
+            } else if(b == '\\') {
+            	temp += (char)b;
+            	b = f.read();
+            } else if(b == '"') {
+            	quotes = quotes == 1 ? quotes-1 : quotes+1;
+        	} else if(braces == 0 && b == '\n') {
                 continue;
             }
             temp += (char)b;
             if(braces == 0) {
+            	if(showJson) {
+            		System.out.println(temp);
+            	}
                 strings.add(temp);
                 temp = "";
             }
         }
         f.close();
-        return (String[]) strings.toArray();
+        return (String[]) strings.toArray(new String[strings.size()]);
     }
 
-    private JSONObject[] createJSONObject(String filePath) {
+    private JSONObject[] createJSONObjects(String filePath) {
         LinkedList<JSONObject> jsonObjs = new LinkedList<JSONObject>();
         try {
             String[] objs = getJSONStringsFromFile(filePath);
@@ -177,7 +203,7 @@ public class populate {
             e.printStackTrace();
             jsonObjs = null;
         }
-        return (JSONObject[]) jsonObjs.toArray();
+        return (JSONObject[]) jsonObjs.toArray(new JSONObject[jsonObjs.size()]);
     }
 
     private String getArrayInsert(String[] arr) {
@@ -349,7 +375,7 @@ public class populate {
                     if(b == '\n') {
                         index++;
                     } else {
-                        credentials[index] += Integer.toString(b);
+                        credentials[index] += (char)b;
                     }
                 }
             } catch (IOException e) {
@@ -359,6 +385,9 @@ public class populate {
             }       
             username = credentials[0];
             password = credentials[1];
+        }
+        if(debug) {
+        	System.out.println("Username set to " + username + "\nPassword set to " + password);
         }
         return true;
     }
