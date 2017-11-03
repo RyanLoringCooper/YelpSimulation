@@ -17,7 +17,7 @@ import java.util.LinkedList;
 
 import oracle.jdbc.*;
 
-private class populate {
+public class populate {
 
     private static final String helpText = "Usage:\njava -jar populate.jar -host hostname -port portNum [-user username -password password] jsonFile1 jsonFile2 jsonFile3 ...\n\t"
                                             +"-host: specifies that a hostname is the next argument\n\t"
