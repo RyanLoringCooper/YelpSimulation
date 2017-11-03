@@ -1,3 +1,8 @@
+/* Indexes */
+DROP INDEX reviewIndex;
+DROP INDEX businessIndex;
+DROP INDEX yelpUserIndex;
+
 /* Entities */
 DROP TABLE Review;
 DROP TABLE Business;

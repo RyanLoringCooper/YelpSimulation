@@ -84,3 +84,10 @@ CREATE TABLE Review (
     CONSTRAINT r_bid FOREIGN KEY (business_id) REFERENCES Business(business_id),
     CONSTRAINT r_uid FOREIGN KEY (user_id) REFERENCES YelpUser(user_id)
 );
+
+/* Indexes */
+CREATE INDEX businessIndex ON Business WITH STRUCTURE=HASH KEY=(categories);
+
+CREATE INDEX reviewIndex ON Review WITH STRUCTURE=HASH KEY=(business_id);
+
+CREATE INDEX yelpUserIndex ON YelpUser WITH STRUCTURE=HASH KEY=(user_id);
