@@ -13,6 +13,9 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class UserInterface extends JFrame implements ActionListener {
     
@@ -22,21 +25,22 @@ public class UserInterface extends JFrame implements ActionListener {
     private static final String[] hoursOfTheDay = {"12:00AM", "1:00AM", "2:00AM", "3:00AM", "4:00AM", "5:00AM", "6:00AM", "7:00AM", "8:00AM", "9:00AM", "10:00AM", "11:00AM", "12:00PM", "1:00PM", "2:00PM", "3:00PM", "4:00PM", "5:00PM", "6:00PM", "7:00PM", "8:00PM", "9:00PM", "10:00PM", "11:00PM"};
     private static final String[] searchForOptions = {""}; // TODO 
     private static final String searchActionString = "Search", closeActionString = "Close";
-    private static final int headerHeight = 12, headerMaxWidth = 60;
+    private static final int headerHeight = 12, headerMaxWidth = 200;
     // modify these by calling *scroller.setViewportView(new JList<JTextArea>(JTextArea[] info));
     private JScrollPane subCategoriesScroller, attributesScroller, detailsScroller;
-    private JList<JTextArea> mainCategoriesList, subCategoriesList, attributesList, detailsList;
-    private JComboBox<JTextArea> weekDayDropdown, fromHoursDropdown, toHoursDropdown, searchForDropdown;
+    private JList<String> mainCategoriesList, subCategoriesList, attributesList, detailsList;
+    private JComboBox<String> weekDayDropdown, fromHoursDropdown, toHoursDropdown, searchForDropdown;
 
     public UserInterface() {
-        setupFirstWindow();
         add(firstView());
+        setupFirstWindow();
     }
 
     private void setupFirstWindow() {
         setName("Yelp Simulation");
-        setSize(1000, 700);
         setLocation(10,20);
+        setVisible(true);
+        pack();
     }
 
     private JPanel firstView() {
@@ -63,27 +67,27 @@ public class UserInterface extends JFrame implements ActionListener {
         JPanel weekDay = new JPanel();
         weekDay.setLayout(new BoxLayout(weekDay, BoxLayout.Y_AXIS));
         weekDay.add(new JTextArea("Day of the week:"));
-        weekDayDropdown = getDropdown(daysOfTheWeek);
+        weekDayDropdown = new JComboBox<String>(daysOfTheWeek);
         weekDay.add(weekDayDropdown); 
 
         JPanel fromHours = new JPanel();
         fromHours.setLayout(new BoxLayout(fromHours, BoxLayout.Y_AXIS));
         fromHours.add(new JTextArea("From:"));
-        fromHoursDropdown = getDropdown(hoursOfTheDay);
+        fromHoursDropdown = new JComboBox<String>(hoursOfTheDay);
         fromHours.add(fromHoursDropdown);
 
         JPanel toHours = new JPanel();
         toHours.setLayout(new BoxLayout(toHours, BoxLayout.Y_AXIS));
         toHours.add(new JTextArea("To:"));
-        List<String> reverseHours = Array.asList(hoursOfTheDay);
+        List<String> reverseHours = Arrays.asList(hoursOfTheDay);
         Collections.reverse(reverseHours);
-        toHoursDropdown = getDropdown(reverseHours.toArray(new String [reverseHours.size()]));
+        toHoursDropdown = new JComboBox<String>(reverseHours.toArray(new String [reverseHours.size()]));
         toHours.add(toHoursDropdown);
 
         JPanel searchFor = new JPanel();
         searchFor.setLayout(new BoxLayout(searchFor, BoxLayout.Y_AXIS));
         searchFor.add(new JTextArea("Search for:"));
-        searchForDropdown = getDropdown(searchForOptions);
+        searchForDropdown = new JComboBox<String>(searchForOptions);
         searchFor.add(searchForDropdown);
 
         JButton searchButton = new JButton(searchActionString);
@@ -103,34 +107,22 @@ public class UserInterface extends JFrame implements ActionListener {
         return panel;
     }
 
-    private JComboBox getDropdown(String[] s) {
-        JTextArea days = new JTextArea[s.length];
-        for(int i = 0; i < s.length; i++) {
-            days = new JTextArea(s[i]);
-        }
-        return new JComboBox<JTextArea>(days);
-    }
-
     // shows the various categories that can be used to narrow things down
     private JPanel getListsPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
         panel.add(getListOfMainCategories());
-        subCategoriesList = new JList<TextArea>();
+        subCategoriesList = new JList<String>();
         subCategoriesScroller = new JScrollPane(subCategoriesList);
         panel.add(subCategoriesScroller);
-        attributesList = new JList<TextArea>();
+        attributesList = new JList<String>();
         attributesScroller = new JScrollPane(attributesList);
         panel.add(attributesScroller);
         return panel;
     }
 
     private JScrollPane getListOfMainCategories() {
-        JTextArea[] textAreas = new JTextArea[mainCategories.length];
-        for(int i = 0; i < mainCategories.length; i++) {
-            textAreas[i] = new JTextArea(mainCategories[i]);
-        }
-        mainCategoriesList = new JList<JTextArea>(textAreas);
+        mainCategoriesList = new JList<String>(mainCategories);
         mainCategoriesList.setLayoutOrientation(JList.VERTICAL);
         mainCategoriesList.setVisibleRowCount(-1);
         JScrollPane listScroller = new JScrollPane(mainCategoriesList);
@@ -145,10 +137,10 @@ public class UserInterface extends JFrame implements ActionListener {
         JTextArea city = new JTextArea("City");
         JTextArea state = new JTextArea("State");
         JTextArea stars = new JTextArea("Stars");
-        business.setPreferredSize(new Dimension(headerHeight, headerMaxWidth));
-        city.setPreferredSize(new Dimension(headerHeight, headerMaxWidth/2));
-        state.setPreferredSize(new Dimension(headerHeight, headerMaxWidth/4));
-        stars.setPreferredSize(new Dimension(headerHeight, headerMaxWidth/4));
+        business.setPreferredSize(new Dimension(headerMaxWidth, headerHeight));
+        city.setPreferredSize(new Dimension(headerMaxWidth/2, headerHeight));
+        state.setPreferredSize(new Dimension(headerMaxWidth/4, headerHeight));
+        stars.setPreferredSize(new Dimension(headerMaxWidth/4, headerHeight));
         detailsHeader.add(business);
         detailsHeader.add(city);
         detailsHeader.add(state);
@@ -159,19 +151,22 @@ public class UserInterface extends JFrame implements ActionListener {
     // panel that displays reviews about a selected business
     private JPanel getDetailsPanel() {
         JPanel panel = new JPanel();
-        detailsScroller = new JScrollPane(new JPanel());
+        panel.setPreferredSize(new Dimension(headerMaxWidth*4, 500));
+        JPanel scrollerPanel = new JPanel();
+        scrollerPanel.setPreferredSize(new Dimension(headerMaxWidth*4, 500));
+        detailsScroller = new JScrollPane(scrollerPanel);
         detailsScroller.setColumnHeaderView(getDetailsHeader());
         panel.add(detailsScroller);
         return panel;
     }
 
     private void executeSearch() {
-        List<JTextArea> mainCatsSelected = mainCategoriesList.getSelectedValuesList();
-        List<JTextArea> subCatsSelected = subCategoriesList.getSelectedValuesList();
-        List<JTextArea> attributesSelected = attributesList.getSelectedValuesList();
-        JTextArea dayChosen = weekDayDropdown.getSelectedItem();
-        JTextArea fromChosen = fromHoursDropdown.getSelectedItem();
-        JTextArea toChose = toHoursDropdown.getSelectedItem();
+        List<String> mainCatsSelected = mainCategoriesList.getSelectedValuesList();
+        List<String> subCatsSelected = subCategoriesList.getSelectedValuesList();
+        List<String> attributesSelected = attributesList.getSelectedValuesList();
+        JTextArea dayChosen = (JTextArea) weekDayDropdown.getSelectedItem();
+        JTextArea fromChosen = (JTextArea) fromHoursDropdown.getSelectedItem();
+        JTextArea toChose = (JTextArea) toHoursDropdown.getSelectedItem();
         // TODO
         if(attributesSelected.isEmpty()) {
 
