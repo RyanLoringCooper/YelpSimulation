@@ -14,14 +14,14 @@ public class UserInterface extends JFrame implements ActionListener {
     
     public static final long serialVerisonUID = 7335319432115237346L;
     private static final String[] mainCategories = {"Active Life", "Arts & Entertainment", "Automotive", "Car Rental", "Cafes", "Beauty & Spas", "Conveniece Stores", "Dentists", "Doctors", "Drugstores", "Department Stores", "Education", "Event Planning & Services", "Flowers & Gifts", "Food", "Health & Medical", "Home Services", "Home & Garden", "Hospitals", "Hotels & Travel", "Hardware Stores", "Grocery", "Medical Centers", "Nurseries & Gardening", "Nightlife", "Restaurants", "Shopping", "Transportation"};
-    private static final String[] daysOfTheWeek = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+    private static final String[] daysOfTheWeek = {"Any", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
     private static final String[] hoursOfTheDay = {"12:00AM", "1:00AM", "2:00AM", "3:00AM", "4:00AM", "5:00AM", "6:00AM", "7:00AM", "8:00AM", "9:00AM", "10:00AM", "11:00AM", "12:00PM", "1:00PM", "2:00PM", "3:00PM", "4:00PM", "5:00PM", "6:00PM", "7:00PM", "8:00PM", "9:00PM", "10:00PM", "11:00PM"};
     private static final String[] searchForOptions = {""}; // TODO 
     private static final int searchActionString = "Search", closeActionString = "Close";
     private static final int headerHeight = 12, headerMaxWidth = 60;
     // modify these by calling *scroller.setViewportView(new JList<JTextArea>(JTextArea[] info));
     private JScrollPane subCategoriesScroller, attributesScroller, detailsScroller;
-    private JList<JTextArea> mainCategoriesList;
+    private JList<JTextArea> mainCategoriesList, subCategoriesList, attributesList, detailsList;
     private JComboBox weekDayDropdown, fromHoursDropdown, toHoursDropdown;
 
     public UserInterface() {
@@ -71,7 +71,9 @@ public class UserInterface extends JFrame implements ActionListener {
         JPanel toHours = new JPanel();
         toHours.setLayout(new BoxLayout(toHours, BoxLayout.Y_AXIS));
         toHours.add(new JTextArea("To:"));
-        toHoursDropdown = getDropdown(hoursOfTheDay);
+        List<String> reverseHours = Array.asList(hoursOfTheDay);
+        Collections.reverse(reverseHours);
+        toHoursDropdown = getDropdown(reverseHours.toArray(new String [reverseHours.size()]));
         toHours.add(toHoursDropdown);
 
         JPanel searchFor = new JPanel();
@@ -110,9 +112,11 @@ public class UserInterface extends JFrame implements ActionListener {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
         panel.add(getListOfMainCategories());
-        subCategoriesScroller = new JScrollPane();
+        subCategoriesList = new JList<TextArea>();
+        subCategoriesScroller = new JScrollPane(subCategoriesList);
         panel.add(subCategoriesScroller);
-        attributesScroller = new JScrollPane();
+        attributesList = new JList<TextArea>();
+        attributesScroller = new JScrollPane(attributesList);
         panel.add(attributesScroller);
         return panel;
     }
@@ -156,9 +160,26 @@ public class UserInterface extends JFrame implements ActionListener {
         return panel;
     }
 
-    public void actionPreformed(ActionEvent e) {
+    private void executeSearch() {
+        List<JTextArea> mainCatsSelected = mainCategoriesList.getSelectedValuesList();
+        List<JTextArea> subCatsSelected = subCategoriesList.getSelectedValuesList();
+        List<JTextArea> attributesSelected = attributesList.getSelectedValuesList();
+        JTextArea dayChosen = weekDayDropdown.getSelectedItem();
+        JTextArea fromChosen = fromHoursDropdown.getSelectedItem();
+        JTextArea toChose = toHoursDropdown.getSelectedItem();
+        // TODO
+        if(attributesSelected.isEmpty()) {
+
+        } else if(subCatsSelected.isEmpty()) {
+
+        } else {
+
+        }
+    }
+
+    public void actionPerformed(ActionEvent e) {
         if(searchActionString.equals(e.getActionCommand())) {
-            // TODO preform search
+            executeSearch();
         } else if(closeActionString.equals(e.getActionCommand())) {
             // TODO preform close operation
         }
