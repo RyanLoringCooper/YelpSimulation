@@ -1,12 +1,16 @@
-package com.RyanLoringCooper.UserInterface;
+package com.RyanLoringCooper;
 
 import javax.swing.JFrame;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.BoxLayout;
 import javax.swing.JScrollPane;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JTextArea;
 
+import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -17,12 +21,12 @@ public class UserInterface extends JFrame implements ActionListener {
     private static final String[] daysOfTheWeek = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
     private static final String[] hoursOfTheDay = {"12:00AM", "1:00AM", "2:00AM", "3:00AM", "4:00AM", "5:00AM", "6:00AM", "7:00AM", "8:00AM", "9:00AM", "10:00AM", "11:00AM", "12:00PM", "1:00PM", "2:00PM", "3:00PM", "4:00PM", "5:00PM", "6:00PM", "7:00PM", "8:00PM", "9:00PM", "10:00PM", "11:00PM"};
     private static final String[] searchForOptions = {""}; // TODO 
-    private static final int searchActionString = "Search", closeActionString = "Close";
+    private static final String searchActionString = "Search", closeActionString = "Close";
     private static final int headerHeight = 12, headerMaxWidth = 60;
     // modify these by calling *scroller.setViewportView(new JList<JTextArea>(JTextArea[] info));
     private JScrollPane subCategoriesScroller, attributesScroller, detailsScroller;
     private JList<JTextArea> mainCategoriesList;
-    private JComboBox weekDayDropdown, fromHoursDropdown, toHoursDropdown;
+    private JComboBox<JTextArea> weekDayDropdown, fromHoursDropdown, toHoursDropdown, searchForDropdown;
 
     public UserInterface() {
         setupFirstWindow();
@@ -130,17 +134,17 @@ public class UserInterface extends JFrame implements ActionListener {
         return listScroller;
     }
 
-    private void getDetailsHeader() {
+    private JPanel getDetailsHeader() {
         JPanel detailsHeader = new JPanel();
         detailsHeader.setLayout(new BoxLayout(detailsHeader, BoxLayout.X_AXIS));
         JTextArea business = new JTextArea("Business");
         JTextArea city = new JTextArea("City");
         JTextArea state = new JTextArea("State");
         JTextArea stars = new JTextArea("Stars");
-        business.setPreferredSize(headerHeight, headerMaxWidth);
-        city.setPreferredSize(headerHeight, headerMaxWidth/2);
-        state.setPreferredSize(headerHeight, headerMaxWidth/4);
-        stars.setPreferredSize(headerHeight, headerMaxWidth/4);
+        business.setPreferredSize(new Dimension(headerHeight, headerMaxWidth));
+        city.setPreferredSize(new Dimension(headerHeight, headerMaxWidth/2));
+        state.setPreferredSize(new Dimension(headerHeight, headerMaxWidth/4));
+        stars.setPreferredSize(new Dimension(headerHeight, headerMaxWidth/4));
         detailsHeader.add(business);
         detailsHeader.add(city);
         detailsHeader.add(state);
@@ -152,7 +156,8 @@ public class UserInterface extends JFrame implements ActionListener {
     private JPanel getDetailsPanel() {
         JPanel panel = new JPanel();
         detailsScroller = new JScrollPane(new JPanel());
-        scrollpane.setColumnHeaderView(getDetailsHeader());
+        detailsScroller.setColumnHeaderView(getDetailsHeader());
+        panel.add(detailsScroller);
         return panel;
     }
 

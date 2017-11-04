@@ -86,8 +86,8 @@ CREATE TABLE Review (
 );
 
 /* Indexes */
-CREATE INDEX businessIndex ON Business WITH STRUCTURE=HASH KEY=(categories);
+CREATE INDEX businessIndex ON Business(categories);
 
-CREATE INDEX reviewIndex ON Review WITH STRUCTURE=HASH KEY=(business_id);
+CREATE INDEX reviewIndex ON Review(business_id);
 
-CREATE INDEX yelpUserIndex ON YelpUser WITH STRUCTURE=HASH KEY=(user_id);
+CREATE INDEX yelpUserIndex ON YelpUser(user_id);
