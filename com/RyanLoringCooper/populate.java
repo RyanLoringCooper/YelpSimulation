@@ -30,7 +30,7 @@ public class populate {
     private static final String[] userValues = {"yelping_since", "votes", "review_count", "name", "user_id", "friends", "fans", "average_stars", "elite"};
     private static final String reviewString = "INSERTS INTO Review (votes, user_id, review_id, stars, date_field, text, business_id) VALUES (";
     private static final String[] reviewValues = {"votes", "user_id", "review_id", "stars", "date_field", "text", "business_id"};
-    private static final String dbName = "oracle";
+    private static final String dbName = "XE";
     private String hostname = null, username = null, password = null, oracleURL = null, mysqlURL = null;
     private int port = -1;
     private JSONObject[] businesses = null, reviews = null, users = null;
@@ -143,6 +143,7 @@ public class populate {
         }
         */
         oracleURL = "jdbc:oracle:thin@" + hostname + ":" + port + ":" + dbName;
+        System.out.println(oracleURL);
         mysqlURL = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName;
         try {
             conn = DriverManager.getConnection(oracleURL, username, password);
