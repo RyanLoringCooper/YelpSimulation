@@ -67,8 +67,7 @@ public class populate {
 
     private void setupInsertLogger() {
     	try {
-    		File insertsFile = new File("insertsGenerated.sql"
-    				+ "");
+    		File insertsFile = new File("insertsGenerated.sql");
     		insertsFile.createNewFile();
 			insertLogger = new FileOutputStream(insertsFile, false);
 		} catch (IOException e) {
