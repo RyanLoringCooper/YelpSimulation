@@ -3,12 +3,13 @@ package com.RyanLoringCooper;
 import org.json.JSONObject;
 import org.json.JSONException;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
@@ -27,39 +28,54 @@ public class populate {
                                             +"-password: specifies that the password to log into the database is the next argument\n";
     private static final String businessString = "INSERT INTO Business (business_id,full_address,hours,open,categories,city,review_count,name,neighborhoods,longitude,state,stars,latitude,attributes) VALUES (";
     private static final String[] businessValues = {"business_id", "full_address", "hours", "open", "categories", "city", "review_count", "name", "neighborhoods", "longitude", "state", "stars", "latitude", "attributes"};
-    private static final String userString = "INSERT INTO YelpUsers (yelping_since, votes, review_count, name, user_id, friends, fans, average_stars, elite) VALUES (";
+    private static final String userString = "INSERT INTO YelpUser (yelping_since, votes, review_count, name, user_id, friends, fans, average_stars, elite) VALUES (";
     private static final String[] userValues = {"yelping_since", "votes", "review_count", "name", "user_id", "friends", "fans", "average_stars", "elite"};
-    private static final String reviewString = "INSERTS INTO Review (votes, user_id, review_id, stars, date_field, text, business_id) VALUES (";
+    private static final String reviewString = "INSERT INTO Review (votes, user_id, review_id, stars, date_field, text, business_id) VALUES (";
     private static final String[] reviewValues = {"votes", "user_id", "review_id", "stars", "date_field", "text", "business_id"};
     private static final String dbName = "XE";
-    private String hostname = null, username = null, password = null, oracleURL = null, mysqlURL = null;
-    private int port = -1;
-    private JSONObject[] businesses = null, reviews = null, users = null;
+    private String hostname = null, port = null, username = null, password = null, businessFile = null, userFile = null, reviewFile = null; 
     private Connection conn;
     private boolean debug = false, showJson = false;
+	private FileOutputStream insertLogger;
 
 
     private populate(String[] args) {
-        if(isValidArguments(args) && setCredentials() && setupDatabaseConnection()) {
-        	if(businesses != null) {
-        		handleInserts(getBusinessInserts());
+        if(isValidArguments(args)) {
+        	if(debug) {
+        		setupInsertLogger();
         	}
-        	if(users != null) {
-        		handleInserts(getUserInserts());
+        	if(username == null && password == null) {
+        		conn = Util.setupDatabaseConnection(hostname, port, dbName, debug);
+        	} else {
+        		conn = Util.setupDatabaseConnection(hostname, port, username, password, dbName, debug);
         	}
-        	if(reviews != null) {
-				handleInserts(getReviewInserts());
+        	if(conn != null) {
+				handleInserts(getBusinessInserts(createJSONObjects(businessFile)));
+				handleInserts(getUserInserts(createJSONObjects(userFile)));
+				handleInserts(getReviewInserts(createJSONObjects(reviewFile)));
+				try {
+					conn.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				return;
         	}
-            try {
-				conn.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-        } else {
-            System.err.println(helpText);
-        }
+        	System.err.println("Could not set up database connection.");
+        } 
+		System.err.println(helpText);
     }
 
+    private void setupInsertLogger() {
+    	try {
+    		File insertsFile = new File("insertsGenerated.sql"
+    				+ "");
+    		insertsFile.createNewFile();
+			insertLogger = new FileOutputStream(insertsFile, false);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    }
+    
     private boolean isValidArguments(String[] args) {
         if(args.length < 4) {
             return false;
@@ -74,7 +90,7 @@ public class populate {
                 }
             } else if(args[i].equals("-port")) {
                 if(i+1 < args.length) {
-                    port = Integer.parseInt(args[++i]);;
+                    port = args[++i];
                 } else {
                     System.err.println("You must provide a port directly after -port flag (ie. '-port portNumber')");
                     return false;
@@ -100,57 +116,26 @@ public class populate {
         		return false;
         	} else if(args[i].equals("-j")) {
         		showJson = true;
-        	} else {
-				JSONObject[] jsonObj = createJSONObjects(args[i]);
-				if(debug) {
-					System.out.println("Created JSON objects from " + args[i]);
-				}
-				if(jsonObj == null) {
-					System.err.println("Could not create a JSON object from " + args[i]);
-					return false;
-				}
-				if(args[i].matches("[/A-Za-z_.]*business[A-Za-z_.]*")) {
-					businesses = jsonObj;
-				} else if(args[i].matches("[/A-Za-z_.]*user[A-Za-z_.]*")) {
-					users = jsonObj;
-				} else if(args[i].matches("[/A-Za-z_.]*review[A-Za-z_.]*")) {
-					reviews = jsonObj;
-				} else {
-					System.out.println(args[i] + " was not used.");
-				}
-        	}
+        	} else if(args[i].matches("[/A-Za-z_.]*business[A-Za-z_.]*")) {
+				businessFile = args[i];
+			} else if(args[i].matches("[/A-Za-z_.]*user[A-Za-z_.]*")) {
+				userFile = args[i];
+			} else if(args[i].matches("[/A-Za-z_.]*review[A-Za-z_.]*")) {
+				reviewFile = args[i];
+			} else {
+				System.out.println(args[i] + " was not used.");
+			}
         }
         if(hostname == null) {
             System.err.println("You must provide a hostname using the -host flag.");
             return false;
         }
-        if(port == -1) {
+        if(port == null) {
             System.err.println("You must provide a port number using the -port flag.");
             return false;
         }
         if(debug) {
         	System.out.println("Arguments parsed");
-        }
-        return true;
-    }
-
-    public boolean setupDatabaseConnection() {
-        /*
-        try {
-            Class.forName("oracle.jdbc.driver.OracleDriver");
-            Class.forName("com.mysql.jdbc.Driver");
-        } catch (ClassNotFoundException cnfe) {
-            System.err.println("Error loading driver: " + cnfe);
-        }
-        */
-        oracleURL = "jdbc:oracle:thin:@" + hostname + ":" + port + ":" + dbName;
-        System.out.println(oracleURL);
-        //mysqlURL = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName;
-        try {
-            conn = DriverManager.getConnection(oracleURL, username, password);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
         }
         return true;
     }
@@ -205,13 +190,20 @@ public class populate {
             e.printStackTrace();
             jsonObjs = null;
         }
+        if(jsonObjs == null || jsonObjs.size() == 0) {
+			System.err.println("Could not create a JSON object from " + filePath);
+			return null;
+		}
+    	if(debug) {
+			System.out.println("Created JSON objects from " + filePath);
+		}
         return (JSONObject[]) jsonObjs.toArray(new JSONObject[jsonObjs.size()]);
     }
 
     private String getArrayInsert(String[] arr) {
         String s = "";
         for(int j = 0; j < arr.length; j++) {
-            s += "'" + arr[j] + "'";
+            s += "'" + Util.cleanString(arr[j]) + "'";
             if(j != arr.length-1) {
                 s += ",";
             }
@@ -222,7 +214,7 @@ public class populate {
     private String getSingleAttributeInsert(Object attr) {
 		String s = "";
 		if(attr instanceof String) {
-			s += "'" + attr +"'"; 
+			s += "'" + Util.cleanString(attr) + "'"; // TODO sanitize 
 		} else if(attr instanceof Boolean) {
 			if((boolean)attr) {
 				s += "'true'";
@@ -247,22 +239,10 @@ public class populate {
         return s;
     }
     
-    private String[] convertToStringArray(Object[] arr) {
-    	String[] s = new String[arr.length];
-    	for(int i = 0; i < arr.length; i++) {
-    		s[i] = arr[i].toString();
+    private String[] getBusinessInserts(JSONObject[] businesses) {
+    	if(businesses == null) {
+    		return null;
     	}
-    	return s;
-    }
-    
-    private String removeInvalidCharacters(String s) {
-    	s = s.replace('\n', ' ');
-    	s = s.replace('\r', ' ');
-    	s = s.replace('&', '+');
-    	return s;
-    }
-
-    private String[] getBusinessInserts() {
         String[] inserts = new String[businesses.length];
         for(int i = 0; i < inserts.length; i++) {
             String s = new String(businessString);
@@ -271,9 +251,9 @@ public class populate {
                 if(value.equals("hours")) {
                     s += "hoursTable(";
                     Map<String, Object> hours = (Map<String, Object>) m.get(value);
-                    String[] days = convertToStringArray(hours.keySet().toArray());
+                    String[] days = Util.toStringArray(hours.keySet().toArray());
                     for(int j = 0; j < days.length; j++) {
-                        s += "hours_type('" + days[j] + "',";
+                        s += "hours_type('" + Util.cleanString(days[j]) + "',";
                         Map<String, Object> dayMap = (Map<String, Object>) hours.get(days[j]);
                         s += "'" + (String) dayMap.get("open") + "','" + (String) dayMap.get("close") + "')";
                         if(j != days.length-1) {
@@ -294,9 +274,9 @@ public class populate {
                 } else if(value.equals("attributes")) {
                     s += "attributeTable(";
                     Map<String, Object> attrsMap = (Map<String, Object>) m.get(value);
-                    String[] attrs = convertToStringArray( attrsMap.keySet().toArray());
+                    String[] attrs = Util.toStringArray( attrsMap.keySet().toArray());
                     for(int j = 0; j < attrs.length; j++) {
-                        s += "attribute_type('" + attrs[i] + "',";
+                        s += "attribute_type('" + Util.cleanString(attrs[i]) + "',";
                         s += getSingleAttributeInsert(attrsMap.get(attrs[i]));
                         s += ")";
                         if(j != attrs.length-1) {
@@ -311,13 +291,15 @@ public class populate {
                 }
             }
             s += ");";
-            s = removeInvalidCharacters(s);
             inserts[i] = s;
         }
         return inserts;
     }
 
-    private String[] getUserInserts() {
+    private String[] getUserInserts(JSONObject[] users) {
+    	if(users == null) {
+    		return null;
+    	}
         String[] inserts = new String[users.length];
         for(int i = 0; i < inserts.length; i++) {
             String s = new String(userString);
@@ -333,8 +315,9 @@ public class populate {
                     s += "),";
                 } else if(value.equals("elite")) {
                     s += "eliteTable(";
-                    ArrayList<String> temp = (ArrayList<String>)m.get(value);
-                    s += getArrayInsert(temp.toArray(new String[temp.size()]));
+                    ArrayList<Integer> temp = (ArrayList<Integer>)m.get(value);
+                    Integer[] tempInts = temp.toArray(new Integer[temp.size()]);
+                    s += getArrayInsert(Util.toStringArray(tempInts));
                     // elite is the last value, so no trailing comma is necessary
                     s += ")";
                 } else {
@@ -343,13 +326,15 @@ public class populate {
                 }
             }
             s += ");";
-            s = removeInvalidCharacters(s);
             inserts[i] = s;
         }
         return inserts;
     }
 
-    private String[] getReviewInserts() {
+    private String[] getReviewInserts(JSONObject[] reviews) {
+    	if(reviews == null) {
+    		return null;
+    	}
         String[] inserts = new String[reviews.length];
         for(int i = 0; i < inserts.length; i++) {
             String s = new String(reviewString);
@@ -357,6 +342,8 @@ public class populate {
             for(String value : reviewValues) {
                 if(value.equals("votes")) {
                     s += getVotesInsert((Map<String, Integer>) m.get(value));
+                } else if(value.equals("date_field")) {
+                	s += "to_date('" + (String)m.get("date") + "', 'YYYY/MM/DD')";
                 } else {
                     s += getSingleAttributeInsert(m.get(value));
                 }
@@ -366,55 +353,34 @@ public class populate {
                 }
             }
             s += ");";
-            s = removeInvalidCharacters(s);
             inserts[i] = s;
         }
         return inserts;
     }
 
     private void handleInserts(String[] inserts) {
-    	try {
-    		Statement statement = conn.createStatement();
-    		for(String insert : inserts) {
-    			if(debug) {
-    				System.out.println(insert);
-    			}
-    			statement.executeUpdate(insert);
-    		}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} 
-    }
-
-    private boolean setCredentials() {
-        if(username == null || password == null) {
-        	System.out.println("Attempting to get database credentials from file.");
-            String[] credentials = new String[2];
-            credentials[0] = "";
-            credentials[1] = "";
-            int index = 0;
-            try {
-                FileInputStream f = new FileInputStream("credentials");
-                while(f.available() > 0) {
-                    int b = f.read();
-                    if(b == '\n') {
-                        index++;
-                    } else {
-                        credentials[index] += (char)b;
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                System.err.println("You must either have a file named credentials with the database credentials in it, or provide the credentials as command line arguments.");
-                return false;
-            }       
-            username = credentials[0];
-            password = credentials[1];
-        }
-        if(debug) {
-        	System.out.println("Username set to " + username + "\nPassword set to " + password);
-        }
-        return true;
+    	if(inserts != null) {
+			try {
+				Statement statement = conn.createStatement();
+				for(String insert : inserts) {
+					if(debug) {
+						System.out.println(insert);
+						insertLogger.write((insert + "\n").getBytes());
+					}
+					statement.executeUpdate(insert);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+				System.err.println(e.getSQLState());
+				SQLException ex;
+				while((ex = e.getNextException()) != null) {
+					ex.printStackTrace();
+					System.err.println(ex.getSQLState());
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+    	}
     }
 
     public static void main(String[] args) {

@@ -11,32 +11,41 @@ import javax.swing.JTextArea;
 
 import java.awt.Dimension;
 import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class UserInterface extends JFrame implements ActionListener {
+public class UserInterface extends JFrame {
     
-    public static final long serialVerisonUID = 7335319432115237346L;
+	private static final long serialVersionUID = -668103667213956930L;
     private static final String[] mainCategories = {"Active Life", "Arts & Entertainment", "Automotive", "Car Rental", "Cafes", "Beauty & Spas", "Conveniece Stores", "Dentists", "Doctors", "Drugstores", "Department Stores", "Education", "Event Planning & Services", "Flowers & Gifts", "Food", "Health & Medical", "Home Services", "Home & Garden", "Hospitals", "Hotels & Travel", "Hardware Stores", "Grocery", "Medical Centers", "Nurseries & Gardening", "Nightlife", "Restaurants", "Shopping", "Transportation"};
     private static final String[] daysOfTheWeek = {"Any", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
     private static final String[] hoursOfTheDay = {"12:00AM", "1:00AM", "2:00AM", "3:00AM", "4:00AM", "5:00AM", "6:00AM", "7:00AM", "8:00AM", "9:00AM", "10:00AM", "11:00AM", "12:00PM", "1:00PM", "2:00PM", "3:00PM", "4:00PM", "5:00PM", "6:00PM", "7:00PM", "8:00PM", "9:00PM", "10:00PM", "11:00PM"};
     private static final String[] searchForOptions = {""}; // TODO 
-    private static final String searchActionString = "Search", closeActionString = "Close";
     private static final int headerHeight = 12, headerMaxWidth = 200;
     // modify these by calling *scroller.setViewportView(new JList<JTextArea>(JTextArea[] info));
-    private JScrollPane subCategoriesScroller, attributesScroller, detailsScroller;
-    private JList<String> mainCategoriesList, subCategoriesList, attributesList, detailsList;
-    private JComboBox<String> weekDayDropdown, fromHoursDropdown, toHoursDropdown, searchForDropdown;
+    protected JScrollPane subCategoriesScroller, attributesScroller, detailsScroller;
+    protected JList<String> mainCategoriesList, subCategoriesList, attributesList, detailsList;
+    protected JComboBox<String> weekDayDropdown, fromHoursDropdown, toHoursDropdown, searchForDropdown;
+    private ActionListener al;
 
-    public UserInterface() {
+    public UserInterface(ActionListener al) {
+    	this.al = al;
         add(firstView());
         setupFirstWindow();
     }
 
+    protected class WindowListener extends WindowAdapter {
+		public void windowClosing(WindowEvent e) {
+			hw3.terminate();
+		}
+}
+    
     private void setupFirstWindow() {
+    	addWindowListener(new WindowListener());
         setName("Yelp Simulation");
         setLocation(10,20);
         setVisible(true);
@@ -90,13 +99,13 @@ public class UserInterface extends JFrame implements ActionListener {
         searchForDropdown = new JComboBox<String>(searchForOptions);
         searchFor.add(searchForDropdown);
 
-        JButton searchButton = new JButton(searchActionString);
-        searchButton.setActionCommand(searchActionString);
-        searchButton.addActionListener(this);
+        JButton searchButton = new JButton(hw3.searchActionString);
+        searchButton.setActionCommand(hw3.searchActionString);
+        searchButton.addActionListener(al);
 
-        JButton closeButton = new JButton(closeActionString);
-        closeButton.setActionCommand(closeActionString);
-        closeButton.addActionListener(this);
+        JButton closeButton = new JButton(hw3.closeActionString);
+        closeButton.setActionCommand(hw3.closeActionString);
+        closeButton.addActionListener(al);
 
         panel.add(weekDay);
         panel.add(fromHours);
@@ -158,30 +167,5 @@ public class UserInterface extends JFrame implements ActionListener {
         detailsScroller.setColumnHeaderView(getDetailsHeader());
         panel.add(detailsScroller);
         return panel;
-    }
-
-    private void executeSearch() {
-        List<String> mainCatsSelected = mainCategoriesList.getSelectedValuesList();
-        List<String> subCatsSelected = subCategoriesList.getSelectedValuesList();
-        List<String> attributesSelected = attributesList.getSelectedValuesList();
-        JTextArea dayChosen = (JTextArea) weekDayDropdown.getSelectedItem();
-        JTextArea fromChosen = (JTextArea) fromHoursDropdown.getSelectedItem();
-        JTextArea toChose = (JTextArea) toHoursDropdown.getSelectedItem();
-        // TODO
-        if(attributesSelected.isEmpty()) {
-
-        } else if(subCatsSelected.isEmpty()) {
-
-        } else {
-
-        }
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        if(searchActionString.equals(e.getActionCommand())) {
-            executeSearch();
-        } else if(closeActionString.equals(e.getActionCommand())) {
-            // TODO preform close operation
-        }
     }
 }
