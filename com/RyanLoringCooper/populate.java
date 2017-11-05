@@ -12,6 +12,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 public class populate {
@@ -108,11 +109,11 @@ public class populate {
 					System.err.println("Could not create a JSON object from " + args[i]);
 					return false;
 				}
-				if(args[i].matches("[/A-Za-z_]*business[A-Za-z_.]*")) {
+				if(args[i].matches("[/A-Za-z_.]*business[A-Za-z_.]*")) {
 					businesses = jsonObj;
-				} else if(args[i].matches("[/A-Za-z_]*user[A-Za-z_.]*")) {
+				} else if(args[i].matches("[/A-Za-z_.]*user[A-Za-z_.]*")) {
 					users = jsonObj;
-				} else if(args[i].matches("[/A-Za-z_]*review[A-Za-z_.]*")) {
+				} else if(args[i].matches("[/A-Za-z_.]*review[A-Za-z_.]*")) {
 					reviews = jsonObj;
 				} else {
 					System.out.println(args[i] + " was not used.");
@@ -142,9 +143,9 @@ public class populate {
             System.err.println("Error loading driver: " + cnfe);
         }
         */
-        oracleURL = "jdbc:oracle:thin@" + hostname + ":" + port + ":" + dbName;
+        oracleURL = "jdbc:oracle:thin:@" + hostname + ":" + port + ":" + dbName;
         System.out.println(oracleURL);
-        mysqlURL = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName;
+        //mysqlURL = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName;
         try {
             conn = DriverManager.getConnection(oracleURL, username, password);
         } catch (SQLException e) {
@@ -229,10 +230,11 @@ public class populate {
 				s += "'false'";
 			}
 		} else if(attr instanceof Integer) {
-			s += Integer.toString((Integer) attr) + "";
-		} else {
-			System.err.print("Inserter wasn't prepared for ");
-			System.err.println(attr);
+			s += Integer.toString((Integer) attr);
+		} else if(attr instanceof Double) {
+			s += Double.toString((Double) attr);
+    	} else {
+			System.err.println("Inserter wasn't prepared for "+attr+" Which is of type " + attr.getClass());
 		}
 		return s;
     }
@@ -244,6 +246,21 @@ public class populate {
         s += Integer.toString(votes.get("cool")) + ")";
         return s;
     }
+    
+    private String[] convertToStringArray(Object[] arr) {
+    	String[] s = new String[arr.length];
+    	for(int i = 0; i < arr.length; i++) {
+    		s[i] = arr[i].toString();
+    	}
+    	return s;
+    }
+    
+    private String removeInvalidCharacters(String s) {
+    	s = s.replace('\n', ' ');
+    	s = s.replace('\r', ' ');
+    	s = s.replace('&', '+');
+    	return s;
+    }
 
     private String[] getBusinessInserts() {
         String[] inserts = new String[businesses.length];
@@ -254,7 +271,7 @@ public class populate {
                 if(value.equals("hours")) {
                     s += "hoursTable(";
                     Map<String, Object> hours = (Map<String, Object>) m.get(value);
-                    String[] days = (String[]) hours.keySet().toArray();
+                    String[] days = convertToStringArray(hours.keySet().toArray());
                     for(int j = 0; j < days.length; j++) {
                         s += "hours_type('" + days[j] + "',";
                         Map<String, Object> dayMap = (Map<String, Object>) hours.get(days[j]);
@@ -266,16 +283,18 @@ public class populate {
                     s += "),";
                 } else if(value.equals("categories")) {
                     s += "categoryTable(";
-                    s += getArrayInsert((String[]) m.get(value));
+                    ArrayList<String> temp = (ArrayList<String>)m.get(value);
+                    s += getArrayInsert(temp.toArray(new String[temp.size()]));
                     s += "),";
                 } else if(value.equals("neighborhoods")) {
                     s += "neighborhoodTable(";
-                    s += getArrayInsert((String[]) m.get(value));
+                    ArrayList<String> temp = (ArrayList<String>)m.get(value);
+                    s += getArrayInsert(temp.toArray(new String[temp.size()]));
                     s += "),";
                 } else if(value.equals("attributes")) {
                     s += "attributeTable(";
                     Map<String, Object> attrsMap = (Map<String, Object>) m.get(value);
-                    String[] attrs = (String[]) attrsMap.keySet().toArray();
+                    String[] attrs = convertToStringArray( attrsMap.keySet().toArray());
                     for(int j = 0; j < attrs.length; j++) {
                         s += "attribute_type('" + attrs[i] + "',";
                         s += getSingleAttributeInsert(attrsMap.get(attrs[i]));
@@ -292,6 +311,7 @@ public class populate {
                 }
             }
             s += ");";
+            s = removeInvalidCharacters(s);
             inserts[i] = s;
         }
         return inserts;
@@ -308,11 +328,13 @@ public class populate {
                     s += ",";
                 } else if(value.equals("friends")) {
                     s += "friendsTable(";
-                    s += getArrayInsert((String[]) m.get(value));
+                    ArrayList<String> temp = (ArrayList<String>)m.get(value);
+                    s += getArrayInsert(temp.toArray(new String[temp.size()]));
                     s += "),";
                 } else if(value.equals("elite")) {
                     s += "eliteTable(";
-                    s += getArrayInsert((String[]) m.get(value));
+                    ArrayList<String> temp = (ArrayList<String>)m.get(value);
+                    s += getArrayInsert(temp.toArray(new String[temp.size()]));
                     // elite is the last value, so no trailing comma is necessary
                     s += ")";
                 } else {
@@ -321,6 +343,7 @@ public class populate {
                 }
             }
             s += ");";
+            s = removeInvalidCharacters(s);
             inserts[i] = s;
         }
         return inserts;
@@ -343,6 +366,7 @@ public class populate {
                 }
             }
             s += ");";
+            s = removeInvalidCharacters(s);
             inserts[i] = s;
         }
         return inserts;
