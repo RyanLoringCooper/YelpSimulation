@@ -26,11 +26,12 @@ public class populate {
                                             +"-port: specifies that a port number to connect to the host is the next argument\n\t"
                                             +"-user: specifies that the username to log into the database is the next argument\n\t"
                                             +"-password: specifies that the password to log into the database is the next argument\n";
-    private static final String businessString = "INSERT INTO Business (business_id,full_address,hours,open,categories,city,review_count,name,neighborhoods,longitude,state,stars,latitude,attributes) VALUES (";
-    private static final String[] businessValues = {"business_id", "full_address", "hours", "open", "categories", "city", "review_count", "name", "neighborhoods", "longitude", "state", "stars", "latitude", "attributes"};
+    private static final String businessString = "INSERT INTO Business (business_id,full_address,hours,open,city,review_count,name,neighborhoods,longitude,state,stars,latitude,attributes) VALUES (";
+    private static final String categoryString = "INSERT INTO Category (name, businesses) VALUES (";
     private static final String userString = "INSERT INTO YelpUser (yelping_since, votes, review_count, name, user_id, friends, fans, average_stars, elite) VALUES (";
-    private static final String[] userValues = {"yelping_since", "votes", "review_count", "name", "user_id", "friends", "fans", "average_stars", "elite"};
     private static final String reviewString = "INSERT INTO Review (votes, user_id, review_id, stars, date_field, text, business_id) VALUES (";
+    private static final String[] businessValues = {"business_id", "full_address", "hours", "open", "city", "review_count", "name", "neighborhoods", "longitude", "state", "stars", "latitude", "attributes"};
+    private static final String[] userValues = {"yelping_since", "votes", "review_count", "name", "user_id", "friends", "fans", "average_stars", "elite"};
     private static final String[] reviewValues = {"votes", "user_id", "review_id", "stars", "date_field", "text", "business_id"};
     private static final String dbName = "XE";
     private String hostname = null, port = null, username = null, password = null, businessFile = null, userFile = null, reviewFile = null; 
@@ -38,6 +39,20 @@ public class populate {
     private boolean debug = false, showJson = false;
 	private FileOutputStream insertLogger;
 
+    private class CategoryStruct {
+        public String cat;
+        public List<String> bids;
+
+        public CategoryStruct(String cat, String bid) {
+            this.cat = cat;
+            bids = new List<String>();
+            bids.add(bid);
+        }
+
+        public boolean equals(String cat) {
+            return this.cat == cat;
+        }
+    }
 
     private populate(String[] args) {
         if(isValidArguments(args)) {
@@ -237,15 +252,38 @@ public class populate {
         s += Integer.toString(votes.get("cool")) + ")";
         return s;
     }
+
+    private int getCategoryIndex(String cat, List<CategoryStruct> uniqueCats) {
+        for(int i = 0; i < uniqueCats.size(); i++) {
+            if(uniqueCats.get(i).equals(cat)) {
+                return i;
+            }
+        }
+        return -1;
+    }
     
+    private List<CategoryStruct> getUniqueCategories(String[] cats, List<CategoryStruct> uniqueCats, String bid) {
+        for(String cat : cats) {
+            int catIndex = getCategoryIndex(cat, uniqueCats);
+            if(catIndex == -1) {
+                uniqueCats.add(cat);
+            } else {
+                uniqueCats.get(catIndex).bid.add(bid);
+            }
+        }
+        return uniqueCats;
+    }
+
     private String[] getBusinessInserts(JSONObject[] businesses) {
     	if(businesses == null) {
     		return null;
     	}
-        String[] inserts = new String[businesses.length];
+        List<String> inserts = new List<String>();
+        List<CategoryStruct> categories = new List<CategoryStruct>();
         for(int i = 0; i < inserts.length; i++) {
             String s = new String(businessString);
             Map<String, Object> m = businesses[i].toMap();
+            categories = getUniqueCategories(Util.toStringArray((ArrayList<String>)m.get("categories")), uniqueCats);
             for(String value : businessValues) {
                 if(value.equals("hours")) {
                     s += "hoursTable(";
@@ -260,24 +298,43 @@ public class populate {
                         } 
                     }
                     s += "),";
-                } else if(value.equals("categories")) {
-                    s += "categoryTable(";
-                    ArrayList<String> temp = (ArrayList<String>)m.get(value);
-                    s += getArrayInsert(temp.toArray(new String[temp.size()]));
-                    s += "),";
                 } else if(value.equals("neighborhoods")) {
                     s += "neighborhoodTable(";
-                    ArrayList<String> temp = (ArrayList<String>)m.get(value);
-                    s += getArrayInsert(temp.toArray(new String[temp.size()]));
+                    s += getArrayInsert(Util.toStringArray((ArrayList<String>)m.get(value)));
                     s += "),";
-                } else if(value.equals("attributes")) {
+                } else if(value.equals("attributes")) { 
                     s += "attributeTable(";
                     Map<String, Object> attrsMap = (Map<String, Object>) m.get(value);
-                    String[] attrs = Util.toStringArray( attrsMap.keySet().toArray());
+                    String[] attrs = Util.toStringArray(attrsMap.keySet().toArray());
                     for(int j = 0; j < attrs.length; j++) {
-                        s += "attribute_type('" + Util.cleanString(attrs[i]) + "',";
-                        s += getSingleAttributeInsert(attrsMap.get(attrs[i]));
-                        s += ")";
+                        Object a = attrsMap.get(attrs[j]);
+                        if(a instanceof ArrayList<String>) {
+                            String[] data = Util.toStringArray((ArrayList<String>) a);
+                            if(data.length > 0) {
+                                for(int k = 0; k < data.length; k++) {
+                                    s += "attribute_type('" + Util.cleanString(attrs[j]) + "','" + data[k] + "')";
+                                    if(k != data.length-1) {
+                                        s += ",";
+                                    }
+                                }
+                            } 
+                        } else if(a instanceof Map<String, Object>) {
+                            Map<String, Object> dataMap = (Map<String, Object>) a;
+                            String[] dataKeys = Util.toStringArray(dataMap.keySet().toArray());
+                            if(dataKeys.length() > 0) {
+                                for(int k = 0; k < dataKeys.length; k++) {
+                                    s += "attribute_type('" + Util.cleanString(attrs[j]) + " " + dataKeys[k] + "',";
+                                    s += getSingleAttributeInsert(dataMap.get(dataKeys[k])) + ")";
+                                    if(k != dataKeys.length-1) {
+                                        s += ",";
+                                    }
+                                }
+                            } 
+                        } else {
+                            s += "attribute_type('" + Util.cleanString(attrs[j]) + "',";
+                            s += getSingleAttributeInsert(a);
+                            s += ")";
+                        }
                         if(j != attrs.length-1) {
                             s += ",";
                         }
@@ -290,9 +347,23 @@ public class populate {
                 }
             }
             s += ")";
-            inserts[i] = s;
+            inserts.add(s);
         }
-        return inserts;
+        // generate Categories Inserts
+        for(int i = 0; i < categories.size(); i++) {
+            String s = new String(categoryString);
+            CategoryStruct cs = categories.get(i);
+            s += "'" + Util.cleanString(cs.name) + "',businessTableForCategories(";
+            for(int j = 0; j < cs.bids.size(); j++) {
+                s += "'" + Util.cleanString(cs.bids.get(j)) + "'";
+                if(j != cs.bids.size()-1) {
+                    s += ",";
+                }
+            }
+            s += "))";
+            inserts.add(s);
+        }
+        return inserts.toArray(new String[inserts.size()]);
     }
 
     private String[] getUserInserts(JSONObject[] users) {
@@ -309,14 +380,11 @@ public class populate {
                     s += ",";
                 } else if(value.equals("friends")) {
                     s += "friendsTable(";
-                    ArrayList<String> temp = (ArrayList<String>)m.get(value);
-                    s += getArrayInsert(temp.toArray(new String[temp.size()]));
+                    s += getArrayInsert(Util.toStringArray((ArrayList<String>)m.get(value));
                     s += "),";
                 } else if(value.equals("elite")) {
                     s += "eliteTable(";
-                    ArrayList<Integer> temp = (ArrayList<Integer>)m.get(value);
-                    Integer[] tempInts = temp.toArray(new Integer[temp.size()]);
-                    s += getArrayInsert(Util.toStringArray(tempInts));
+                    s += getArrayInsert(Util.toStringArray((ArrayList<Integer>)m.get(value)));
                     // elite is the last value, so no trailing comma is necessary
                     s += ")";
                 } else {

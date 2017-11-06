@@ -9,7 +9,7 @@ CREATE OR REPLACE TYPE hours_type as OBJECT (
 
 CREATE OR REPLACE TYPE attribute_type as OBJECT (
     attr            VARCHAR(32),
-    value           VARCHAR(32) 
+    value           VARCHAR(64)
 );
 /
 
@@ -21,9 +21,6 @@ CREATE OR REPLACE TYPE votes_type as OBJECT (
 /
 
 CREATE OR REPLACE TYPE hoursTable AS TABLE OF hours_type;
-/
-
-CREATE OR REPLACE TYPE categoryTable AS TABLE OF VARCHAR(512);
 /
 
 CREATE OR REPLACE TYPE attributeTable AS TABLE OF attribute_type;
@@ -38,13 +35,15 @@ CREATE OR REPLACE TYPE friendsTable AS TABLE OF VARCHAR(128);
 CREATE OR REPLACE TYPE eliteTable AS TABLE OF INTEGER;
 /
 
+CREATE OR REPLACE TYPE businessTableForCategories AS TABLE OF VARCHAR(128);
+/
+
 /* Entities */
 CREATE TABLE Business (
     business_id             VARCHAR(128) PRIMARY KEY,
     full_address            VARCHAR(256) NOT NULL,
     hours                   hoursTable,
     open                    VARCHAR(8), /* true or false */
-    categories              categoryTable,
     city                    VARCHAR(64) NOT NULL,
     review_count            INTEGER DEFAULT 0,
     name                    VARCHAR(64) NOT NULL,
@@ -56,9 +55,14 @@ CREATE TABLE Business (
     attributes              attributeTable
 ) 
 NESTED TABLE hours STORE AS businessHoursTable
-NESTED TABLE categories STORE AS businessCategoriesTable
 NESTED TABLE attributes STORE AS businessAttributesTable
 NESTED TABLE neighborhoods STORE AS businessNeighborhoodsTable;
+
+CREATE TABLE Category (
+    name                    VARCHAR(128) PRIMARY KEY,
+    businesses              businessTableForCategories
+) 
+NESTED TABLE businesses STORE AS categoryBusinessTable;
 
 CREATE TABLE YelpUser ( /* compliments is missing*/
     yelping_since           VARCHAR(16) NOT NULL,
@@ -87,8 +91,4 @@ CREATE TABLE Review (
 );
 
 /* Indexes */
-CREATE INDEX businessIndex ON Business(categories);
-
 CREATE INDEX reviewIndex ON Review(business_id);
-
-CREATE INDEX yelpUserIndex ON YelpUser(user_id);

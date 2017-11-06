@@ -75,6 +75,14 @@ public static Connection setupDatabaseConnection(String hostname, String port, S
 	public static String[] getCredentials() {
 		return getCredentials(false);
 	}
+
+    public static String[] toStringArray(ArrayList<String> arr) {
+        return arr.toArray(new String[arr.size()]);
+    }
+
+    public static String[] toStringArray(ArrayList<Integer> arr) {
+        return Util.toStringArray(arr.toArray(new Integer[temp.size()]));
+    }
 	
 	public static String[] toStringArray(Object[] arr) {
     	String[] s = new String[arr.length];
