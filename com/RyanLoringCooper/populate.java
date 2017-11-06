@@ -213,7 +213,7 @@ public class populate {
     private String getSingleAttributeInsert(Object attr) {
 		String s = "";
 		if(attr instanceof String) {
-			s += "'" + Util.cleanString(attr) + "'"; // TODO sanitize 
+			s += "'" + Util.cleanString(attr) + "'"; 
 		} else if(attr instanceof Boolean) {
 			if((boolean)attr) {
 				s += "'true'";
@@ -289,7 +289,7 @@ public class populate {
 					s += ",";
                 }
             }
-            s += ");";
+            s += ")";
             inserts[i] = s;
         }
         return inserts;
@@ -324,7 +324,7 @@ public class populate {
 					s += ",";
                 }
             }
-            s += ");";
+            s += ")";
             inserts[i] = s;
         }
         return inserts;
@@ -351,7 +351,7 @@ public class populate {
                     s += ",";
                 }
             }
-            s += ");";
+            s += ")";
             inserts[i] = s;
         }
         return inserts;
@@ -364,7 +364,7 @@ public class populate {
 				for(String insert : inserts) {
 					if(debug) {
 						System.out.println(insert);
-						insertLogger.write((insert + "\n").getBytes());
+						insertLogger.write((insert + ";\n").getBytes());
 					}
 					statement.executeUpdate(insert);
 				}

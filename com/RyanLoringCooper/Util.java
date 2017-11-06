@@ -123,8 +123,8 @@ public static Connection setupDatabaseConnection(String hostname, String port, S
     }
     
     public static String cleanString(String s) {
-    	char[] badChars = {'\n', '\r', '-', '\''};
-    	String[] replacements = {" ", " ", "\\-", "''"};
+    	char[] badChars = {'\n', '\r', '\''};
+    	String[] replacements = {" ", " ", "''"};
     	s = thoroughReplace(s, badChars, replacements);
     	return s;
     }

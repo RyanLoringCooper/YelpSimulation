@@ -1,3 +1,4 @@
+SET default OFF;
 /* Types */
 CREATE OR REPLACE TYPE hours_type as OBJECT (
     day             VARCHAR(16),
