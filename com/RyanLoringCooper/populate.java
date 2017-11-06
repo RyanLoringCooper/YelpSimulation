@@ -41,12 +41,12 @@ public class populate {
 
     private class CategoryStruct {
         public String cat;
-        public List<String> bids;
+        public ArrayList<String> bids;
 
         public CategoryStruct(String cat, String bid) {
             this.cat = cat;
-            bids = new List<String>();
-            bids.add(bid);
+            bids = new ArrayList<String>();
+            this.bids.add(bid);
         }
 
         public boolean equals(String cat) {
@@ -253,7 +253,7 @@ public class populate {
         return s;
     }
 
-    private int getCategoryIndex(String cat, List<CategoryStruct> uniqueCats) {
+    private int getCategoryIndex(String cat, ArrayList<CategoryStruct> uniqueCats) { // TODO doesn't find the ones that match
         for(int i = 0; i < uniqueCats.size(); i++) {
             if(uniqueCats.get(i).equals(cat)) {
                 return i;
@@ -262,13 +262,13 @@ public class populate {
         return -1;
     }
     
-    private List<CategoryStruct> getUniqueCategories(String[] cats, List<CategoryStruct> uniqueCats, String bid) {
+    private ArrayList<CategoryStruct> getUniqueCategories(String[] cats, ArrayList<CategoryStruct> uniqueCats, String bid) {
         for(String cat : cats) {
             int catIndex = getCategoryIndex(cat, uniqueCats);
             if(catIndex == -1) {
-                uniqueCats.add(cat);
+                uniqueCats.add(new CategoryStruct(cat, bid));
             } else {
-                uniqueCats.get(catIndex).bid.add(bid);
+                uniqueCats.get(catIndex).bids.add(bid);
             }
         }
         return uniqueCats;
@@ -278,12 +278,12 @@ public class populate {
     	if(businesses == null) {
     		return null;
     	}
-        List<String> inserts = new List<String>();
-        List<CategoryStruct> categories = new List<CategoryStruct>();
-        for(int i = 0; i < inserts.length; i++) {
+        ArrayList<String> inserts = new ArrayList<String>();
+        ArrayList<CategoryStruct> categories = new ArrayList<CategoryStruct>();
+        for(int i = 0; i < businesses.length; i++) {
             String s = new String(businessString);
             Map<String, Object> m = businesses[i].toMap();
-            categories = getUniqueCategories(Util.toStringArray((ArrayList<String>)m.get("categories")), uniqueCats);
+            categories = getUniqueCategories(Util.toStringArray((ArrayList<String>)m.get("categories")), categories, (String) m.get("business_id"));
             for(String value : businessValues) {
                 if(value.equals("hours")) {
                     s += "hoursTable(";
@@ -308,7 +308,7 @@ public class populate {
                     String[] attrs = Util.toStringArray(attrsMap.keySet().toArray());
                     for(int j = 0; j < attrs.length; j++) {
                         Object a = attrsMap.get(attrs[j]);
-                        if(a instanceof ArrayList<String>) {
+                        if(a instanceof ArrayList) {
                             String[] data = Util.toStringArray((ArrayList<String>) a);
                             if(data.length > 0) {
                                 for(int k = 0; k < data.length; k++) {
@@ -318,10 +318,10 @@ public class populate {
                                     }
                                 }
                             } 
-                        } else if(a instanceof Map<String, Object>) {
+                        } else if(a instanceof Map) {
                             Map<String, Object> dataMap = (Map<String, Object>) a;
                             String[] dataKeys = Util.toStringArray(dataMap.keySet().toArray());
-                            if(dataKeys.length() > 0) {
+                            if(dataKeys.length > 0) {
                                 for(int k = 0; k < dataKeys.length; k++) {
                                     s += "attribute_type('" + Util.cleanString(attrs[j]) + " " + dataKeys[k] + "',";
                                     s += getSingleAttributeInsert(dataMap.get(dataKeys[k])) + ")";
@@ -347,13 +347,16 @@ public class populate {
                 }
             }
             s += ")";
+            if(debug) {
+            	System.out.println("Business Insert: " + s);
+            }
             inserts.add(s);
         }
         // generate Categories Inserts
         for(int i = 0; i < categories.size(); i++) {
             String s = new String(categoryString);
             CategoryStruct cs = categories.get(i);
-            s += "'" + Util.cleanString(cs.name) + "',businessTableForCategories(";
+            s += "'" + Util.cleanString(cs.cat) + "',businessTableForCategories(";
             for(int j = 0; j < cs.bids.size(); j++) {
                 s += "'" + Util.cleanString(cs.bids.get(j)) + "'";
                 if(j != cs.bids.size()-1) {
@@ -361,6 +364,9 @@ public class populate {
                 }
             }
             s += "))";
+            if(debug) {
+            	System.out.println("Category Insert: " + s);
+            }
             inserts.add(s);
         }
         return inserts.toArray(new String[inserts.size()]);
@@ -380,7 +386,7 @@ public class populate {
                     s += ",";
                 } else if(value.equals("friends")) {
                     s += "friendsTable(";
-                    s += getArrayInsert(Util.toStringArray((ArrayList<String>)m.get(value));
+                    s += getArrayInsert(Util.toStringArray((ArrayList<String>)m.get(value)));
                     s += "),";
                 } else if(value.equals("elite")) {
                     s += "eliteTable(";

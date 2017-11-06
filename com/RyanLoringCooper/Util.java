@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 public class Util {
 	
@@ -76,12 +77,18 @@ public static Connection setupDatabaseConnection(String hostname, String port, S
 		return getCredentials(false);
 	}
 
-    public static String[] toStringArray(ArrayList<String> arr) {
-        return arr.toArray(new String[arr.size()]);
-    }
-
-    public static String[] toStringArray(ArrayList<Integer> arr) {
-        return Util.toStringArray(arr.toArray(new Integer[temp.size()]));
+    public static String[] toStringArray(ArrayList arr) {
+    	if(arr.size() > 0) {
+			if(arr.get(0) instanceof Integer) {
+				return Util.toStringArray(arr.toArray(new Integer[arr.size()]));
+			} else if(arr.get(0) instanceof String) {
+				return (String[]) arr.toArray(new String[arr.size()]);
+			} else {
+				return Util.toStringArray(arr);
+			}
+    	} else {
+    		return new String[0];
+    	}
     }
 	
 	public static String[] toStringArray(Object[] arr) {
