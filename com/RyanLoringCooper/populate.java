@@ -49,8 +49,8 @@ public class populate {
             this.bids.add(bid);
         }
 
-        public boolean equals(String cat) {
-            return this.cat == cat;
+        public boolean isEqualTo(String cat) {
+            return this.cat.equals(cat);
         }
     }
 
@@ -255,7 +255,7 @@ public class populate {
 
     private int getCategoryIndex(String cat, ArrayList<CategoryStruct> uniqueCats) { // TODO doesn't find the ones that match
         for(int i = 0; i < uniqueCats.size(); i++) {
-            if(uniqueCats.get(i).equals(cat)) {
+            if(uniqueCats.get(i).isEqualTo(cat)) {
                 return i;
             }
         }
@@ -268,7 +268,10 @@ public class populate {
             if(catIndex == -1) {
                 uniqueCats.add(new CategoryStruct(cat, bid));
             } else {
-                uniqueCats.get(catIndex).bids.add(bid);
+                CategoryStruct cs = uniqueCats.get(catIndex);
+                uniqueCats.remove(catIndex);
+                cs.bids.add(bid);
+                uniqueCats.add(cs);
             }
         }
         return uniqueCats;
@@ -324,12 +327,21 @@ public class populate {
                             if(dataKeys.length > 0) {
                                 for(int k = 0; k < dataKeys.length; k++) {
                                     s += "attribute_type('" + Util.cleanString(attrs[j]) + " " + dataKeys[k] + "',";
-                                    s += getSingleAttributeInsert(dataMap.get(dataKeys[k])) + ")";
+                                    Object o = dataMap.get(dataKeys[k]);
+                                    if(o instanceof Boolean || o instanceof String) {
+                                    	s += getSingleAttributeInsert(o) + ")";
+                                    } else if(o instanceof Double) {
+                                    	s += "'" + Double.toString((Double)o) + "'";
+                                    } else if(o instanceof Integer) {
+                                    	s += "'" + Integer.toString((Integer)o) + "'";
+                                    }
                                     if(k != dataKeys.length-1) {
                                         s += ",";
                                     }
                                 }
-                            } 
+                            } else {
+                            	s += "attribute_type('" + Util.cleanString(attrs[j]) + "', '')";
+                            }
                         } else {
                             s += "attribute_type('" + Util.cleanString(attrs[j]) + "',";
                             s += getSingleAttributeInsert(a);
@@ -347,9 +359,6 @@ public class populate {
                 }
             }
             s += ")";
-            if(debug) {
-            	System.out.println("Business Insert: " + s);
-            }
             inserts.add(s);
         }
         // generate Categories Inserts
@@ -364,9 +373,6 @@ public class populate {
                 }
             }
             s += "))";
-            if(debug) {
-            	System.out.println("Category Insert: " + s);
-            }
             inserts.add(s);
         }
         return inserts.toArray(new String[inserts.size()]);

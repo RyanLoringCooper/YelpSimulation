@@ -8,7 +8,7 @@ CREATE OR REPLACE TYPE hours_type as OBJECT (
 /
 
 CREATE OR REPLACE TYPE attribute_type as OBJECT (
-    attr            VARCHAR(32),
+    attr            VARCHAR(64),
     value           VARCHAR(64)
 );
 /
@@ -49,7 +49,7 @@ CREATE TABLE Business (
     name                    VARCHAR(64) NOT NULL,
     neighborhoods           neighborhoodTable,
     longitude               NUMBER NOT NULL,
-    state                   VARCHAR(2) NOT NULL,
+    state                   VARCHAR(8) NOT NULL,
     stars                   NUMBER DEFAULT 0,
     latitude                NUMBER NOT NULL,
     attributes              attributeTable
