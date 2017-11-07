@@ -35,9 +35,6 @@ CREATE OR REPLACE TYPE friendsTable AS TABLE OF VARCHAR(128);
 CREATE OR REPLACE TYPE eliteTable AS TABLE OF INTEGER;
 /
 
-CREATE OR REPLACE TYPE businessTableForCategories AS TABLE OF VARCHAR(128);
-/
-
 /* Entities */
 CREATE TABLE Business (
     business_id             VARCHAR(128) PRIMARY KEY,
@@ -59,8 +56,9 @@ NESTED TABLE attributes STORE AS businessAttributesTable
 NESTED TABLE neighborhoods STORE AS businessNeighborhoodsTable;
 
 CREATE TABLE Category (
-    name                    VARCHAR(128) PRIMARY KEY,
-    businesses              businessTableForCategories
+    id                      INTEGER PRIMARY KEY,
+    name                    VARCHAR(128), 
+    business                VARCHAR(128) FOREIGN KEY REFERENCES Business(BID)
 ) 
 NESTED TABLE businesses STORE AS categoryBusinessTable;
 

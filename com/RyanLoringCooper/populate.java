@@ -27,7 +27,7 @@ public class populate {
                                             +"-user: specifies that the username to log into the database is the next argument\n\t"
                                             +"-password: specifies that the password to log into the database is the next argument\n";
     private static final String businessString = "INSERT INTO Business (business_id,full_address,hours,open,city,review_count,name,neighborhoods,longitude,state,stars,latitude,attributes) VALUES (";
-    private static final String categoryString = "INSERT INTO Category (name, businesses) VALUES (";
+    private static final String categoryString = "INSERT INTO Category (name, business) VALUES (";
     private static final String userString = "INSERT INTO YelpUser (yelping_since, votes, review_count, name, user_id, friends, fans, average_stars, elite) VALUES (";
     private static final String reviewString = "INSERT INTO Review (votes, user_id, review_id, stars, date_field, text, business_id) VALUES (";
     private static final String[] businessValues = {"business_id", "full_address", "hours", "open", "city", "review_count", "name", "neighborhoods", "longitude", "state", "stars", "latitude", "attributes"};
@@ -41,16 +41,19 @@ public class populate {
 
     private class CategoryStruct {
         public String cat;
-        public ArrayList<String> bids;
+        public String bid;
 
         public CategoryStruct(String cat, String bid) {
             this.cat = cat;
-            bids = new ArrayList<String>();
-            this.bids.add(bid);
+            this.bid = bid;
         }
 
-        public boolean isEqualTo(String cat) {
+        public boolean sameCategory(String cat) {
             return this.cat.equals(cat);
+        }
+
+        public boolean sameBusiness(String bid) {
+            return this.bid.equals(bid);
         }
     }
 
@@ -253,30 +256,6 @@ public class populate {
         return s;
     }
 
-    private int getCategoryIndex(String cat, ArrayList<CategoryStruct> uniqueCats) { // TODO doesn't find the ones that match
-        for(int i = 0; i < uniqueCats.size(); i++) {
-            if(uniqueCats.get(i).isEqualTo(cat)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-    
-    private ArrayList<CategoryStruct> getUniqueCategories(String[] cats, ArrayList<CategoryStruct> uniqueCats, String bid) {
-        for(String cat : cats) {
-            int catIndex = getCategoryIndex(cat, uniqueCats);
-            if(catIndex == -1) {
-                uniqueCats.add(new CategoryStruct(cat, bid));
-            } else {
-                CategoryStruct cs = uniqueCats.get(catIndex);
-                uniqueCats.remove(catIndex);
-                cs.bids.add(bid);
-                uniqueCats.add(cs);
-            }
-        }
-        return uniqueCats;
-    }
-
     private String[] getBusinessInserts(JSONObject[] businesses) {
     	if(businesses == null) {
     		return null;
@@ -286,7 +265,10 @@ public class populate {
         for(int i = 0; i < businesses.length; i++) {
             String s = new String(businessString);
             Map<String, Object> m = businesses[i].toMap();
-            categories = getUniqueCategories(Util.toStringArray((ArrayList<String>)m.get("categories")), categories, (String) m.get("business_id"));
+            ArrayList<String> cats = (ArrayList<String>)m.get("categories")
+            for(int j = 0; j < cats.size() j++) {
+                categories.add(new CategoryStruct(cats.get(i), (String) m.get("business_id"))
+            }
             for(String value : businessValues) {
                 if(value.equals("hours")) {
                     s += "hoursTable(";
@@ -365,14 +347,7 @@ public class populate {
         for(int i = 0; i < categories.size(); i++) {
             String s = new String(categoryString);
             CategoryStruct cs = categories.get(i);
-            s += "'" + Util.cleanString(cs.cat) + "',businessTableForCategories(";
-            for(int j = 0; j < cs.bids.size(); j++) {
-                s += "'" + Util.cleanString(cs.bids.get(j)) + "'";
-                if(j != cs.bids.size()-1) {
-                    s += ",";
-                }
-            }
-            s += "))";
+            s += "'" + Util.cleanString(cs.cat) + "','" + Util.cleanString(cs.bid) + "')";
             inserts.add(s);
         }
         return inserts.toArray(new String[inserts.size()]);

@@ -8,7 +8,6 @@ DROP TABLE Business;
 DROP TABLE YelpUser;
 
 /* Types */
-DROP TYPE businessTableForCategories;
 DROP TYPE eliteTable;
 DROP TYPE friendsTable;
 DROP TYPE neighborhoodTable;
