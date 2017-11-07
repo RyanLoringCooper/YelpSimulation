@@ -29,9 +29,6 @@ CREATE OR REPLACE TYPE attributeTable AS TABLE OF attribute_type;
 CREATE OR REPLACE TYPE neighborhoodTable AS TABLE OF VARCHAR(512);
 /
 
-CREATE OR REPLACE TYPE friendsTable AS TABLE OF VARCHAR(128);
-/
-
 CREATE OR REPLACE TYPE eliteTable AS TABLE OF INTEGER;
 /
 
@@ -58,22 +55,20 @@ NESTED TABLE neighborhoods STORE AS businessNeighborhoodsTable;
 CREATE TABLE Category (
     id                      INTEGER PRIMARY KEY,
     name                    VARCHAR(128), 
-    business                VARCHAR(128) FOREIGN KEY REFERENCES Business(BID)
-) 
-NESTED TABLE businesses STORE AS categoryBusinessTable;
+    business                VARCHAR(128), 
+    CONSTRAINT cbid FOREIGN KEY (business) REFERENCES Business(business_id)
+); 
 
-CREATE TABLE YelpUser ( /* compliments is missing*/
+CREATE TABLE YelpUser ( /* compliments and friends are missing*/
     yelping_since           VARCHAR(16) NOT NULL,
     votes                   votes_type,
     review_count            INTEGER DEFAULT 0,
     name                    VARCHAR(32) NOT NULL,
     user_id                 VARCHAR(128) PRIMARY KEY,
-    friends                 friendsTable,
     fans                    INTEGER DEFAULT 0,
     average_stars           NUMBER DEFAULT 0,
     elite                   eliteTable
 )
-NESTED TABLE friends STORE AS yelpUserFriendsTable,
 NESTED TABLE elite STORE AS yelpUserEliteTable;
 
 CREATE TABLE Review (

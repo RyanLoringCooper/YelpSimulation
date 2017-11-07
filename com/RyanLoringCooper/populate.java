@@ -27,11 +27,11 @@ public class populate {
                                             +"-user: specifies that the username to log into the database is the next argument\n\t"
                                             +"-password: specifies that the password to log into the database is the next argument\n";
     private static final String businessString = "INSERT INTO Business (business_id,full_address,hours,open,city,review_count,name,neighborhoods,longitude,state,stars,latitude,attributes) VALUES (";
-    private static final String categoryString = "INSERT INTO Category (name, business) VALUES (";
-    private static final String userString = "INSERT INTO YelpUser (yelping_since, votes, review_count, name, user_id, friends, fans, average_stars, elite) VALUES (";
+    private static final String categoryString = "INSERT INTO Category (id, name, business) VALUES (";
+    private static final String userString = "INSERT INTO YelpUser (yelping_since, votes, review_count, name, user_id, fans, average_stars, elite) VALUES (";
     private static final String reviewString = "INSERT INTO Review (votes, user_id, review_id, stars, date_field, text, business_id) VALUES (";
     private static final String[] businessValues = {"business_id", "full_address", "hours", "open", "city", "review_count", "name", "neighborhoods", "longitude", "state", "stars", "latitude", "attributes"};
-    private static final String[] userValues = {"yelping_since", "votes", "review_count", "name", "user_id", "friends", "fans", "average_stars", "elite"};
+    private static final String[] userValues = {"yelping_since", "votes", "review_count", "name", "user_id", "fans", "average_stars", "elite"};
     private static final String[] reviewValues = {"votes", "user_id", "review_id", "stars", "date_field", "text", "business_id"};
     private static final String dbName = "XE";
     private String hostname = null, port = null, username = null, password = null, businessFile = null, userFile = null, reviewFile = null; 
@@ -265,9 +265,9 @@ public class populate {
         for(int i = 0; i < businesses.length; i++) {
             String s = new String(businessString);
             Map<String, Object> m = businesses[i].toMap();
-            ArrayList<String> cats = (ArrayList<String>)m.get("categories")
-            for(int j = 0; j < cats.size() j++) {
-                categories.add(new CategoryStruct(cats.get(i), (String) m.get("business_id"))
+            ArrayList<String> cats = (ArrayList<String>)m.get("categories");
+            for(int j = 0; j < cats.size(); j++) {
+                categories.add(new CategoryStruct(cats.get(j), (String) m.get("business_id")));
             }
             for(String value : businessValues) {
                 if(value.equals("hours")) {
@@ -347,7 +347,7 @@ public class populate {
         for(int i = 0; i < categories.size(); i++) {
             String s = new String(categoryString);
             CategoryStruct cs = categories.get(i);
-            s += "'" + Util.cleanString(cs.cat) + "','" + Util.cleanString(cs.bid) + "')";
+            s += Integer.toString(i) + ",'" + Util.cleanString(cs.cat) + "','" + Util.cleanString(cs.bid) + "')";
             inserts.add(s);
         }
         return inserts.toArray(new String[inserts.size()]);
@@ -365,10 +365,6 @@ public class populate {
                 if(value.equals("votes")) {
                     s += getVotesInsert((Map<String, Integer>) m.get(value));
                     s += ",";
-                } else if(value.equals("friends")) {
-                    s += "friendsTable(";
-                    s += getArrayInsert(Util.toStringArray((ArrayList<String>)m.get(value)));
-                    s += "),";
                 } else if(value.equals("elite")) {
                     s += "eliteTable(";
                     s += getArrayInsert(Util.toStringArray((ArrayList<Integer>)m.get(value)));

@@ -9,7 +9,6 @@ DROP TABLE YelpUser;
 
 /* Types */
 DROP TYPE eliteTable;
-DROP TYPE friendsTable;
 DROP TYPE neighborhoodTable;
 DROP TYPE attributeTable;
 DROP TYPE hoursTable;

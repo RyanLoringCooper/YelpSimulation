@@ -41,7 +41,7 @@ public class hw3 implements ActionListener {
 		return query;
     }
 
-    private String getDetailsQuery(List<String> mainCatsSelected, List<String> subCatsSelected, List<String> attributesSelected, String dayChose, String fromChose, String toChosen) {
+    private String getDetailsQuery(List<String> mainCatsSelected, List<String> subCatsSelected, List<String> attributesSelected, String dayChose, String fromChose, String toChosen, String searchForChosen) {
     	// TODO this does not hand cases of businesses who's categories aren't totally selected
     	String query = "SELECT b.name, b.city, b.state, b.stars "
     				+  "FROM Business b, table(b.categories) categories, table(b.attributes) attributes "
@@ -61,19 +61,57 @@ public class hw3 implements ActionListener {
 		return query;
     }
     
-    private String getAttributesQuery(List<String> mainCatsSelected, List<String> subCatsSelected, String dayChose, String fromChose, String toChosen) {
-    	// TODO this does not hand cases of businesses who's categories aren't totally selected
-    	String query = "SELECT attributes "
-    				+  "FROM Business b, table(b.categories) categories "
-    				+  "WHERE ";
-    	query += getCategoryWhere(mainCatsSelected, subCatsSelected);
-    	return query;
+    private String getAttributesQuery(List<String> mainCatsSelected, List<String> subCatsSelected, String dayChose, String fromChose, String toChosen, String searchForChosen) {
+        if(mainCatsSelected > 0 && subCatsSelected > 0) {
+            String query = "SELECT DISTINCT b.attributes "
+                        +  "FROM Business b, Category c"
+                        +  "WHERE b.business_id = c.business AND ";
+            for(int i = 0; i < mainCatsSelected.size(); i++) {
+                query += "c.name = '" + mainCatsSelected.get(i) + "' ";
+                if(i != mainCatsSelected.size()-1) {
+                    query += searchForChosen + " ";
+                }
+            }
+            for(int i = 0; i < subCatsSelected.size(); i++) {
+                query += "c.name = '" + subCatsSelected.get(i) + "' ";
+                if(i != subCatsSelected.size()-1) {
+                    query += searchForChosen + " ";
+                }
+            }
+            return query;
+        } else {
+            return null;
+        }
     }
     
-    private String getSubCatsQuery(List<String> mainCatsSelected, String dayChose, String fromChose, String toChosen) {
-    	String query = "SELECT ";
-    	// TODO
-    	return query;
+    private String getSubCatsQuery(List<String> mainCatsSelected, String dayChose, String fromChose, String toChosen, String searchForChosen) {
+        if(mainCatsSelected.size() > 0) {
+            String query = "SELECT DISTINCT busWithCats.name "
+                         + "FROM Category c, ( "
+                            + "SELECT * " 
+                            + "FROM Category cat "
+                            + "WHERE ";
+            for(int i = 0; i < mainCatsSelected.size(); i++) {
+                query += "cat.name != '" + mainCatsSelected.get(i) + "' ";
+                if(i != mainCatsSelected.size()-1) {
+                    query += searchForChosen + " ";
+                } 
+            }
+            query += " AND c.business != cat.business) busWithCats WHERE ";
+            for(int i = 0; i < mainCatsSelected.size(); i++) {
+                query += "c.name = '" + mainCatsSelected.get(i) + "' ";
+                if(i != mainCatsSelected.size()-1) {
+                    if(searchForChosen.equals("AND") {
+                        query += "OR ";
+                    } else {
+                        query += "AND ";
+                    }
+                } 
+            }
+            return query;
+        } else {
+            return null;
+        }
     }
     
     private void executeSearch() {
@@ -83,12 +121,13 @@ public class hw3 implements ActionListener {
         String dayChosen = (String) ui.weekDayDropdown.getSelectedItem();
         String fromChosen = (String) ui.fromHoursDropdown.getSelectedItem();
         String toChosen = (String) ui.toHoursDropdown.getSelectedItem();
+        String searchForChosen = (String) ui.searchForDropdown.getSelectedItem();
 		if(!attributesSelected.isEmpty()) {
-			handleDetailsQuery(getDetailsQuery(mainCatsSelected, subCatsSelected, attributesSelected, dayChosen, fromChosen, toChosen));
+			handleDetailsQuery(getDetailsQuery(mainCatsSelected, subCatsSelected, attributesSelected, dayChosen, fromChosen, toChosen, saerchForChosen));
 		} else if(!subCatsSelected.isEmpty()) {
-			handleAttributesQuery(getAttributesQuery(mainCatsSelected, subCatsSelected, dayChosen, fromChosen, toChosen));
+			handleAttributesQuery(getAttributesQuery(mainCatsSelected, subCatsSelected, dayChosen, fromChosen, toChosen, searchForChosen));
 		} else if(!mainCatsSelected.isEmpty()) {
-			handleSubCatsQuery(getSubCatsQuery(mainCatsSelected, dayChosen, fromChosen, toChosen));
+			handleSubCatsQuery(getSubCatsQuery(mainCatsSelected, dayChosen, fromChosen, toChosen, searchForChosen));
 		}
     }
     
@@ -104,6 +143,9 @@ public class hw3 implements ActionListener {
     }
 
 	private void handleDetailsQuery(String detailsQuery) {
+        if(detailsQuery == null) {
+            return;
+        }
 		ResultSet rs = executeQuery(detailsQuery);
 		if(rs != null) {
 			try {
@@ -117,6 +159,9 @@ public class hw3 implements ActionListener {
 	}
 	
 	private void handleAttributesQuery(String attributesQuery) {
+        if(attributesQuery == null) {
+            return;
+        }
 		ResultSet rs = executeQuery(attributesQuery);
 		if(rs != null) {
 			// TODO make sure you replace attributes with _ between values
@@ -131,6 +176,9 @@ public class hw3 implements ActionListener {
 	}
 
     private void handleSubCatsQuery(String subCatsQuery) {
+        if(subCatsQuery == null) {
+            return;
+        }
     	ResultSet rs = executeQuery(subCatsQuery);
     	if(rs != null) {
     		try {
