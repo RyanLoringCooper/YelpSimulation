@@ -1,6 +1,9 @@
 /* Indexes */
 DROP INDEX reviewIndex;
 
+/* Functions */
+DROP FUNCTION appendToText;
+
 /* Entities */
 DROP TABLE Review;
 DROP TABLE Category;

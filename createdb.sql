@@ -83,5 +83,16 @@ CREATE TABLE Review (
     CONSTRAINT r_uid FOREIGN KEY (user_id) REFERENCES YelpUser(user_id)
 );
 
+/* Functions */
+
+CREATE OR REPLACE FUNCTION appendToText ( textToAppend CLOB, targetReview VARCHAR ) RETURN NUMBER AS
+BEGIN
+    UPDATE Review r
+    SET r.text = r.text || textToAppend
+    WHERE r.review_id = targetReview;
+    RETURN 0;
+END;
+/
+
 /* Indexes */
 CREATE INDEX reviewIndex ON Review(business_id);

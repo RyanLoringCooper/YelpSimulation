@@ -158,6 +158,9 @@ public class populate {
     }
 
     private String[] getJSONStringsFromFile(String filePath) throws FileNotFoundException, IOException {
+    	if(filePath == null) {
+    		return new String[0];
+    	}
         LinkedList<String> strings = new LinkedList<String>();
         String temp = "";
         int braces = 0, quotes = 0;
@@ -381,19 +384,38 @@ public class populate {
         return inserts;
     }
 
+    private ArrayList<String> getTextUpdates(String text, String review_id) {
+        ArrayList<String> updates = new ArrayList<String>();
+        String start = "appendToText('";
+        for(int i = 0; i < text.length()/2000; i++) { 
+            String s = new String(start);
+            if(i+2000 < text.length()) {
+                s += Util.cleanString(text.substring(i, i+2000));
+            } else {
+                s += Util.cleanString(text.substring(i, text.length()-1));
+            }
+            s += "', '" + review_id + "')";
+            updates.add(s);
+        }
+        return updates;
+    }
+
     private String[] getReviewInserts(JSONObject[] reviews) {
     	if(reviews == null) {
     		return null;
     	}
-        String[] inserts = new String[reviews.length];
-        for(int i = 0; i < inserts.length; i++) {
+        ArrayList<String> inserts = new ArrayList<String>();
+        for(int i = 0; i < reviews.length; i++) {
             String s = new String(reviewString);
             Map<String, Object> m = reviews[i].toMap();
+            String text = (String) m.get("text");
             for(String value : reviewValues) {
                 if(value.equals("votes")) {
                     s += getVotesInsert((Map<String, Integer>) m.get(value));
                 } else if(value.equals("date_field")) {
                 	s += "to_date('" + (String)m.get("date") + "', 'YYYY/MM/DD')";
+                } else if(value.equals("text")) {
+                	s += "' '";
                 } else {
                     s += getSingleAttributeInsert(m.get(value));
                 }
@@ -403,9 +425,10 @@ public class populate {
                 }
             }
             s += ")";
-            inserts[i] = s;
+            inserts.add(s);
+            inserts.addAll(getTextUpdates(text, (String) m.get("review_id")));
         }
-        return inserts;
+        return inserts.toArray(new String[inserts.size()]);
     }
 
     private void handleInserts(String[] inserts) {
