@@ -85,7 +85,9 @@ CREATE TABLE Review (
 
 /* Functions */
 
-CREATE OR REPLACE FUNCTION appendToText ( textToAppend CLOB, targetReview VARCHAR ) RETURN NUMBER AS
+CREATE OR REPLACE FUNCTION appendToText ( textToAppend CLOB, targetReview VARCHAR ) 
+    RETURN NUMBER AS
+PRAGMA AUTONOMOUS_TRANSACTION;
 BEGIN
     UPDATE Review r
     SET r.text = r.text || textToAppend

@@ -10,15 +10,20 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class hw3 implements ActionListener {
+	
+	public static final String className = "hw3";
 	public static final String searchActionString = "Search", closeActionString = "Close";
 	private static UserInterface ui = null;
 	private static Connection conn = null;
-	private String hostname = "192.168.1.151", port = "5002", dbName = "XE";
-	private boolean debug = true;
+	private String hostname = "192.168.1.151", port = "5002";
+	private ArgumentParser argParser;
 
-    public hw3() {
-        ui = new UserInterface(this);
-        conn = Util.setupDatabaseConnection(hostname, port, dbName, debug);
+    public hw3(String[] args) {
+    	argParser = new ArgumentParser(args, className);
+    	if(argParser.wasValid()) {
+			ui = new UserInterface(this);
+			conn = Util.setupDatabaseConnection(argParser);
+    	}
     }
     
     private String getCategoryWhere(List<String> mainCatsSelected, List<String> subCatsSelected) {
@@ -137,7 +142,7 @@ public class hw3 implements ActionListener {
 			statement = conn.createStatement();
 			return statement.executeQuery(query);
 		} catch (SQLException e) {
-			e.printStackTrace();
+			Util.handleSQLException(e);
 		}
 		return null;
     }
@@ -153,7 +158,7 @@ public class hw3 implements ActionListener {
 					// TODO
 				}
 			} catch (SQLException e) {
-				e.printStackTrace();
+				Util.handleSQLException(e);
 			}
 		}
 	}
@@ -170,7 +175,7 @@ public class hw3 implements ActionListener {
 					// TODO
 				}
 			} catch (SQLException e) {
-				e.printStackTrace();
+				Util.handleSQLException(e);
 			}
 		}
 	}
@@ -186,7 +191,7 @@ public class hw3 implements ActionListener {
 					// TODO
 				}
 			} catch (SQLException e) {
-				e.printStackTrace();
+				Util.handleSQLException(e);
 			}
     	}
 	}
@@ -196,7 +201,7 @@ public class hw3 implements ActionListener {
     		try {
 				conn.close();
 			} catch (SQLException e) {
-				e.printStackTrace();
+				Util.handleSQLException(e);
 			}
     	}
     	System.exit(0);
@@ -211,6 +216,6 @@ public class hw3 implements ActionListener {
     }
     
     public static void main(String[] args) {
-        new hw3();
+        new hw3(args);
     }
 }

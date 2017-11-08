@@ -1,15 +1,20 @@
 package com.RyanLoringCooper;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedList;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class Util {
 	
-public static Connection setupDatabaseConnection(String hostname, String port, String username, String password, String dbName, boolean debug) {
+	public static Connection setupDatabaseConnection(String hostname, String port, String username, String password, String dbName, boolean debug) {
         /*
         try {
             Class.forName("oracle.jdbc.driver.OracleDriver");
@@ -36,47 +41,11 @@ public static Connection setupDatabaseConnection(String hostname, String port, S
 		return setupDatabaseConnection(hostname, port, username, password, dbName, false);
 	}
 	
-	public static Connection setupDatabaseConnection(String hostname, String port, String dbName, boolean debug) {
-		String[] creds = getCredentials(debug);
-		return setupDatabaseConnection(hostname, port, creds[0], creds[1], dbName, debug);
+	public static Connection setupDatabaseConnection(ArgumentParser argParser) {
+		return setupDatabaseConnection(argParser.getHostname(), argParser.getPort(), argParser.getUsername(), argParser.getPassword(), argParser.getDbName(), argParser.debug());
 	}
 	
-	public static Connection setupDatabaseConnection(String hostname, String port, String dbName) {
-		return setupDatabaseConnection(hostname, port, dbName, false);
-	}
 	
-	public static String[] getCredentials(boolean debug) {
-		System.out.println("Attempting to get database credentials from file.");
-		String[] credentials = new String[2];
-		credentials[0] = "";
-		credentials[1] = "";
-		int index = 0;
-		try {
-			FileInputStream f = new FileInputStream("credentials");
-			while(f.available() > 0) {
-				int b = f.read();
-				if(b == '\n') {
-					index++;
-				} else {
-					credentials[index] += (char)b;
-				}
-			}
-			f.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.err.println("You must either have a file named credentials with the database credentials in it, or provide the credentials as command line arguments.");
-			return credentials;
-		}       
-        if(debug) {
-        	System.out.println("Username set to " + credentials[0] + "\nPassword set to " + credentials[1]);
-        }
-        return credentials;
-    }
-	
-	public static String[] getCredentials() {
-		return getCredentials(false);
-	}
-
     public static String[] toStringArray(ArrayList arr) {
     	if(arr.size() > 0) {
 			if(arr.get(0) instanceof Integer) {
@@ -147,4 +116,71 @@ public static Connection setupDatabaseConnection(String hostname, String port, S
     public static String cleanString(Object s) {
     	return cleanString((String) s);
     }
+    
+    public static String[] getJSONStringsFromFile(String filePath) throws FileNotFoundException, IOException {
+    	if(filePath == null) {
+    		return new String[0];
+    	}
+        LinkedList<String> strings = new LinkedList<String>();
+        String temp = "";
+        int braces = 0, quotes = 0;
+        FileInputStream f = new FileInputStream(filePath);
+        while(f.available() > 0) {
+            int b = f.read();
+            if(b == '{' && quotes == 0) {
+                braces++;
+            } else if(b == '}' && quotes == 0) {
+                braces--;
+            } else if(b == '\\') {
+            	temp += (char)b;
+            	b = f.read();
+            } else if(b == '"') {
+            	quotes = quotes == 1 ? quotes-1 : quotes+1;
+        	} else if(braces == 0 && b == '\n') {
+                continue;
+            }
+            temp += (char)b;
+            if(braces == 0) {
+                strings.add(temp);
+                temp = "";
+            }
+        }
+        f.close();
+        return (String[]) strings.toArray(new String[strings.size()]);
+    }
+
+    public static JSONObject[] createJSONObjects(String filePath) {
+        LinkedList<JSONObject> jsonObjs = new LinkedList<JSONObject>();
+        try {
+            String[] objs = getJSONStringsFromFile(filePath);
+            for(String obj : objs) {
+                jsonObjs.add(new JSONObject(obj)); 
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            System.err.println("The file " + filePath + " could not be found.");
+            jsonObjs = null;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            jsonObjs = null;
+        } catch (IOException e) {
+            e.printStackTrace();
+            jsonObjs = null;
+        }
+        if(jsonObjs == null || jsonObjs.size() == 0) {
+			System.err.println("Could not create a JSON object from " + filePath);
+			return null;
+		}
+        return (JSONObject[]) jsonObjs.toArray(new JSONObject[jsonObjs.size()]);
+    }
+
+	public static void handleSQLException(SQLException e) {
+		e.printStackTrace();
+		System.err.println(e.getSQLState());
+		SQLException ex;
+		while((ex = e.getNextException()) != null) {
+			ex.printStackTrace();
+			System.err.println(ex.getSQLState());
+		}
+	}
 }
