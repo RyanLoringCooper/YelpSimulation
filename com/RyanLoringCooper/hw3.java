@@ -2,7 +2,11 @@ package com.RyanLoringCooper;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import javax.swing.JDialog;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -15,7 +19,6 @@ public class hw3 implements ActionListener {
 	public static final String searchActionString = "Search", closeActionString = "Close";
 	private static UserInterface ui = null;
 	private static Connection conn = null;
-	private String hostname = "192.168.1.151", port = "5002";
 	private ArgumentParser argParser;
 
     public hw3(String[] args) {
@@ -25,61 +28,47 @@ public class hw3 implements ActionListener {
 			conn = Util.setupDatabaseConnection(argParser);
     	}
     }
-    
-    private String getCategoryWhere(List<String> mainCatsSelected, List<String> subCatsSelected) {
-    	String query = "categories = categoryTable(";
-    	for(int i = 0; i < mainCatsSelected.size(); i++) {
-			query += "'" + mainCatsSelected.get(i)+ "'";
-			if(i != mainCatsSelected.size()-1) {
-				query += ",";
-			}
-		}
-		if(subCatsSelected.size() > 0) {
-			query += ",";
-		}
-		for(int i = 0; i < subCatsSelected.size(); i++) {
-			query += "'" + subCatsSelected.get(i) + "'";
-			if(i != subCatsSelected.size()-1) {
-				query += ",";
-			}
-		}
-		return query;
-    }
 
     private String getDetailsQuery(List<String> mainCatsSelected, List<String> subCatsSelected, List<String> attributesSelected, String dayChose, String fromChose, String toChosen, String searchForChosen) {
-    	// TODO this does not hand cases of businesses who's categories aren't totally selected
-    	String query = "SELECT b.name, b.city, b.state, b.stars "
-    				+  "FROM Business b, table(b.categories) categories, table(b.attributes) attributes "
-    				+  "WHERE ";
-		query += getCategoryWhere(mainCatsSelected, subCatsSelected);
-		query += ") AND attributes = attributeTable(";
-		for(int i = 0; i < attributesSelected.size(); i++) {
-			String attr = attributesSelected.get(i);
-			String[] attrs = attr.split("_");
-			query += "attribute_type('" + attrs[0] + "','" + attrs[1] + "')";
-			if(i != mainCatsSelected.size()-1) {
-				query += ",";
-			}
-			
-		}
-		query += ");";
-		return query;
+        if(mainCatsSelected.size() > 0 && subCatsSelected.size() > 0 && attributesSelected.size() > 0) {
+    	    String query = "SELECT b.name, b.city, b.state, b.stars "
+                         + getQueryAttributesMeat(mainCatsSelected, subCatsSelected, dayChose, fromChose, toChosen, searchForChosen);
+            for(int i = 0; i < attributesSelected.size(); i++) {
+                String[] attrs = attributesSelected.get(i).split("=");
+                query += " " + searchForChosen + " attrs.attr = '" + attrs[0] + "' AND attrs.value = '" + attrs[1] + "'";
+            }
+            return query;
+        } else {
+            return null;
+        }
     }
     
     private String getAttributesQuery(List<String> mainCatsSelected, List<String> subCatsSelected, String dayChose, String fromChose, String toChosen, String searchForChosen) {
         if(mainCatsSelected.size() > 0 && subCatsSelected.size() > 0) {
-            String query = "SELECT DISTINCT b.attributes "
-                        +  "FROM Business b, Category c"
-                        +  "WHERE b.business_id = c.business AND ";
-            for(int i = 0; i < mainCatsSelected.size(); i++) {
-                query += "c.name = '" + mainCatsSelected.get(i) + "' ";
-                if(i != mainCatsSelected.size()-1) {
-                    query += searchForChosen + " ";
-                }
+            return "SELECT DISTINCT attrs.attr, attrs.value " 
+                  + getQueryAttributesMeat(mainCatsSelected, subCatsSelected, dayChose, fromChose, toChosen, searchForChosen);
+        } else {
+            return null;
+        }
+    }
+
+    private String getQueryAttributesMeat(List<String> mainCatsSelected, List<String> subCatsSelected, String dayChosen, String fromChosen, String toChosen, String searchForChosen) {
+        if(mainCatsSelected.size() > 0 && subCatsSelected.size() > 0) {
+            String query = "FROM Business b, table(b.attributes) attrs";
+            for(int i = 0; i < mainCatsSelected.size()+subCatsSelected.size(); i++) {
+                query += ", Category c" + Integer.toString(i);
             }
-            for(int i = 0; i < subCatsSelected.size(); i++) {
-                query += "c.name = '" + subCatsSelected.get(i) + "' ";
-                if(i != subCatsSelected.size()-1) {
+            query += " WHERE ";
+            for(int i = 0; i < mainCatsSelected.size()+subCatsSelected.size(); i++) {
+                query += "b.business_id = c" + Integer.toString(i) + ".business AND ";
+            }
+            int i;
+            for(i = 0; i < mainCatsSelected.size(); i++) {
+                query += "c" + Integer.toString(i) + ".name = '" + mainCatsSelected.get(i) + "' " + searchForChosen + " ";
+            }
+            for(; i < subCatsSelected.size()+mainCatsSelected.size(); i++) {
+                query += "c" + Integer.toString(i) + ".name = '" + subCatsSelected.get(i-mainCatsSelected.size()) + "' ";
+                if(i != mainCatsSelected.size()+subCatsSelected.size()-1) {
                     query += searchForChosen + " ";
                 }
             }
@@ -89,7 +78,7 @@ public class hw3 implements ActionListener {
         }
     }
     
-    private String getSubCatsQuery(List<String> mainCatsSelected, String dayChose, String fromChose, String toChosen, String searchForChosen) {
+    private String getSubCatsQuery(List<String> mainCatsSelected, String searchForChosen) {
         if(mainCatsSelected.size() > 0) {
             String query = "SELECT DISTINCT busWithCats.name "
                          + "FROM Category c, ( "
@@ -102,7 +91,7 @@ public class hw3 implements ActionListener {
                     query += searchForChosen + " ";
                 } 
             }
-            query += " AND c.business != cat.business) busWithCats WHERE ";
+            query += ") busWithCats WHERE ";
             for(int i = 0; i < mainCatsSelected.size(); i++) {
                 query += "c.name = '" + mainCatsSelected.get(i) + "' ";
                 if(i != mainCatsSelected.size()-1) {
@@ -113,6 +102,7 @@ public class hw3 implements ActionListener {
                     }
                 } 
             }
+            query += " AND c.business = busWithCats.business";
             return query;
         } else {
             return null;
@@ -132,7 +122,7 @@ public class hw3 implements ActionListener {
 		} else if(!subCatsSelected.isEmpty()) {
 			handleAttributesQuery(getAttributesQuery(mainCatsSelected, subCatsSelected, dayChosen, fromChosen, toChosen, searchForChosen));
 		} else if(!mainCatsSelected.isEmpty()) {
-			handleSubCatsQuery(getSubCatsQuery(mainCatsSelected, dayChosen, fromChosen, toChosen, searchForChosen));
+			handleSubCatsQuery(getSubCatsQuery(mainCatsSelected, searchForChosen));
 		}
     }
     
@@ -140,6 +130,9 @@ public class hw3 implements ActionListener {
     	Statement statement;
 		try {
 			statement = conn.createStatement();
+			if(argParser.debug()) {
+				System.out.println(query);
+			}
 			return statement.executeQuery(query);
 		} catch (SQLException e) {
 			Util.handleSQLException(e);
@@ -151,49 +144,64 @@ public class hw3 implements ActionListener {
         if(detailsQuery == null) {
             return;
         }
+        ArrayList<String> names = new ArrayList<String>();
+        ArrayList<String> cities = new ArrayList<String>();
+        ArrayList<String> states = new ArrayList<String>();
+        ArrayList<String> stars = new ArrayList<String>();
 		ResultSet rs = executeQuery(detailsQuery);
 		if(rs != null) {
 			try {
 				while(rs.next()) {
-					// TODO
+					names.add(rs.getString(1));
+                    cities.add(rs.getString(2));
+                    states.add(rs.getString(3));
+                    stars.add(rs.getString(4));
 				}
 			} catch (SQLException e) {
 				Util.handleSQLException(e);
 			}
 		}
+        ui.fillDetails(names, cities, states, stars);
 	}
 	
 	private void handleAttributesQuery(String attributesQuery) {
         if(attributesQuery == null) {
             return;
         }
+        ArrayList<String> attributes = new ArrayList<String>();
 		ResultSet rs = executeQuery(attributesQuery);
 		if(rs != null) {
-			// TODO make sure you replace attributes with _ between values
 			try {
 				while(rs.next()) {
-					// TODO
+                    attributes.add(rs.getString(1) + "=" + rs.getString(2));
 				}
 			} catch (SQLException e) {
 				Util.handleSQLException(e);
 			}
 		}
+        String[] attrs = attributes.toArray(new String[attributes.size()]);
+        Arrays.sort(attrs);
+        ui.fillAttributes(attrs);
 	}
 
     private void handleSubCatsQuery(String subCatsQuery) {
         if(subCatsQuery == null) {
             return;
         }
+        ArrayList<String> categories = new ArrayList<String>();
     	ResultSet rs = executeQuery(subCatsQuery);
     	if(rs != null) {
     		try {
 				while(rs.next()) {
-					// TODO
+                    categories.add(rs.getString(1));
 				}
 			} catch (SQLException e) {
 				Util.handleSQLException(e);
 			}
     	}
+        String[] cats = categories.toArray(new String[categories.size()]);
+        Arrays.sort(cats);
+        ui.fillSubcategories(cats);
 	}
 
 	static void terminate() {
@@ -209,7 +217,9 @@ public class hw3 implements ActionListener {
     
     public void actionPerformed(ActionEvent e) {
         if(searchActionString.equals(e.getActionCommand())) {
+        	LoadingPopup lp = new LoadingPopup(ui);
             executeSearch();
+            lp.close();
         } else if(closeActionString.equals(e.getActionCommand())) {
         	terminate();
         }

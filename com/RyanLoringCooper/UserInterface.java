@@ -14,6 +14,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -25,10 +26,11 @@ public class UserInterface extends JFrame {
     private static final String[] daysOfTheWeek = {"Any", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
     private static final String[] hoursOfTheDay = {"12:00AM", "1:00AM", "2:00AM", "3:00AM", "4:00AM", "5:00AM", "6:00AM", "7:00AM", "8:00AM", "9:00AM", "10:00AM", "11:00AM", "12:00PM", "1:00PM", "2:00PM", "3:00PM", "4:00PM", "5:00PM", "6:00PM", "7:00PM", "8:00PM", "9:00PM", "10:00PM", "11:00PM"};
     private static final String[] searchForOptions = {"AND", "OR"}; 
-    private static final int headerHeight = 12, headerMaxWidth = 200;
+    private static final int detailsHeaderHeight = 12, detailsHeaderMaxWidth = 160, mainSectionHeight = 500;
     // modify these by calling *scroller.setViewportView(new JList<JTextArea>(JTextArea[] info));
     protected JScrollPane subCategoriesScroller, attributesScroller, detailsScroller;
-    protected JList<String> mainCategoriesList, subCategoriesList, attributesList, detailsList;
+    protected JList<String> mainCategoriesList, subCategoriesList, attributesList;
+    protected JList<JPanel> detailsList;
     protected JComboBox<String> weekDayDropdown, fromHoursDropdown, toHoursDropdown, searchForDropdown;
     private ActionListener al;
 
@@ -42,7 +44,7 @@ public class UserInterface extends JFrame {
 		public void windowClosing(WindowEvent e) {
 			hw3.terminate();
 		}
-}
+    }
     
     private void setupFirstWindow() {
     	addWindowListener(new WindowListener());
@@ -135,37 +137,59 @@ public class UserInterface extends JFrame {
         mainCategoriesList.setLayoutOrientation(JList.VERTICAL);
         mainCategoriesList.setVisibleRowCount(-1);
         JScrollPane listScroller = new JScrollPane(mainCategoriesList);
-        listScroller.setPreferredSize(new Dimension(250, 500));
+        listScroller.setPreferredSize(new Dimension(250, mainSectionHeight));
         return listScroller;
     }
 
-    private JPanel getDetailsHeader() {
-        JPanel detailsHeader = new JPanel();
-        detailsHeader.setLayout(new BoxLayout(detailsHeader, BoxLayout.X_AXIS));
-        JTextArea business = new JTextArea("Business");
-        JTextArea city = new JTextArea("City");
-        JTextArea state = new JTextArea("State");
-        JTextArea stars = new JTextArea("Stars");
-        business.setPreferredSize(new Dimension(headerMaxWidth, headerHeight));
-        city.setPreferredSize(new Dimension(headerMaxWidth/2, headerHeight));
-        state.setPreferredSize(new Dimension(headerMaxWidth/4, headerHeight));
-        stars.setPreferredSize(new Dimension(headerMaxWidth/4, headerHeight));
-        detailsHeader.add(business);
-        detailsHeader.add(city);
-        detailsHeader.add(state);
-        detailsHeader.add(stars);
-        return detailsHeader;
+    private JPanel getDetailsRow(String  one, String two, String three, String four) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+        JTextArea business = new JTextArea(one);
+        JTextArea city = new JTextArea(two);
+        JTextArea state = new JTextArea(three);
+        JTextArea stars = new JTextArea(four);
+        business.setPreferredSize(new Dimension(detailsHeaderMaxWidth, detailsHeaderHeight));
+        city.setPreferredSize(new Dimension(detailsHeaderMaxWidth/2, detailsHeaderHeight));
+        state.setPreferredSize(new Dimension(detailsHeaderMaxWidth/4, detailsHeaderHeight));
+        stars.setPreferredSize(new Dimension(detailsHeaderMaxWidth/4, detailsHeaderHeight));
+        panel.add(business);
+        panel.add(city);
+        panel.add(state);
+        panel.add(stars);
+        return panel;
     }
 
     // panel that displays reviews about a selected business
     private JPanel getDetailsPanel() {
         JPanel panel = new JPanel();
-        panel.setPreferredSize(new Dimension(headerMaxWidth*4, 500));
+        panel.setPreferredSize(new Dimension(detailsHeaderMaxWidth*4, mainSectionHeight));
         JPanel scrollerPanel = new JPanel();
-        scrollerPanel.setPreferredSize(new Dimension(headerMaxWidth*4, 500));
+        scrollerPanel.setPreferredSize(new Dimension(detailsHeaderMaxWidth*4, mainSectionHeight));
         detailsScroller = new JScrollPane(scrollerPanel);
-        detailsScroller.setColumnHeaderView(getDetailsHeader());
+        detailsScroller.setColumnHeaderView(getDetailsRow("Business", "City", "State", "Stars"));
         panel.add(detailsScroller);
         return panel;
+    }
+
+    public void fillDetails(ArrayList<String> names, ArrayList<String> cities, ArrayList<String> states, ArrayList<String> stars) {
+        detailsList = new JList<JPanel>();
+        for(int i = 0; i < names.size(); i++) {
+            detailsList.add(getDetailsRow(names.get(i), cities.get(i), states.get(i), stars.get(i)));
+        }
+        detailsScroller.setViewportView(detailsList);
+    }
+
+    public void fillSubcategories(String[] cats) {
+        subCategoriesList = new JList<String>(cats);
+        subCategoriesList.setLayoutOrientation(JList.VERTICAL);
+        subCategoriesList.setVisibleRowCount(-1);
+        subCategoriesScroller.setViewportView(subCategoriesList);
+    }
+
+    public void fillAttributes(String[] attrs) {
+        attributesList = new JList<String>(attrs);
+        attributesList.setLayoutOrientation(JList.VERTICAL);
+        attributesList.setVisibleRowCount(-1);
+        attributesScroller.setViewportView(attributesList);
     }
 }

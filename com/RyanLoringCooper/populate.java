@@ -247,14 +247,14 @@ public class populate {
     private ArrayList<String> getTextUpdates(String text, String review_id) {
         ArrayList<String> updates = new ArrayList<String>();
         String start = "SELECT appendToText('";
-        for(int i = 0; i < text.length()/2000; i++) { 
+        for(int i = 0; i < text.length(); i+=2000) { 
             String s = new String(start);
-            if(i+2000 < text.length()) {
+            if(2000 < text.length()-i) {
                 s += Util.cleanString(text.substring(i, i+2000));
             } else {
                 s += Util.cleanString(text.substring(i, text.length()-1));
             }
-            s += "', '" + review_id + "') FROM Review;";
+            s += "', '" + review_id + "') FROM Review";
             updates.add(s);
         }
         return updates;

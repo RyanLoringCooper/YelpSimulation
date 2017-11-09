@@ -92,6 +92,7 @@ BEGIN
     UPDATE Review r
     SET r.text = r.text || textToAppend
     WHERE r.review_id = targetReview;
+    COMMIT;
     RETURN 0;
 END;
 /

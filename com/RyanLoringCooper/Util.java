@@ -183,4 +183,14 @@ public class Util {
 			System.err.println(ex.getSQLState());
 		}
 	}
+
+    public static ArrayList<String> addIfUnique(String s, ArrayList<String> l) {
+        for(int i = 0; i < l.size(); i++) {
+            if(s.equals(l.get(i))) {
+                return l;
+            }
+        }
+        l.add(s);
+        return l;
+    }
 }
