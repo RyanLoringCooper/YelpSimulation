@@ -1,11 +1,8 @@
 package com.RyanLoringCooper;
 
 import org.json.JSONObject;
-import org.json.JSONException;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -14,8 +11,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.ArrayList;
-import java.util.LinkedList;
 
+@SuppressWarnings("unchecked")
 public class populate {
 
 	public static final String className = "populate";
@@ -138,7 +135,7 @@ public class populate {
         return s;
     }
     
-    private String getBusinessHoursInsert(Map<String, Object> hours) {
+	private String getBusinessHoursInsert(Map<String, Object> hours) {
     	String s = "hoursTable(";
     	String[] days = Util.toStringArray(hours.keySet().toArray());
         for(int j = 0; j < days.length; j++) {

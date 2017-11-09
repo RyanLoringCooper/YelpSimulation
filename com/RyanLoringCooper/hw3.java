@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.swing.JDialog;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -31,12 +29,16 @@ public class hw3 implements ActionListener {
 
     private String getDetailsQuery(List<String> mainCatsSelected, List<String> subCatsSelected, List<String> attributesSelected, String dayChose, String fromChose, String toChosen, String searchForChosen) {
         if(mainCatsSelected.size() > 0 && subCatsSelected.size() > 0 && attributesSelected.size() > 0) {
-    	    String query = "SELECT b.name, b.city, b.state, b.stars "
-                         + getQueryAttributesMeat(mainCatsSelected, subCatsSelected, dayChose, fromChose, toChosen, searchForChosen);
+    	    String query = "SELECT DISTINCT b.name, b.city, b.state, b.stars "
+                         + getQueryAttributesMeat(mainCatsSelected, subCatsSelected, dayChose, fromChose, toChosen, searchForChosen) + " AND ";
             for(int i = 0; i < attributesSelected.size(); i++) {
                 String[] attrs = attributesSelected.get(i).split("=");
-                query += " " + searchForChosen + " attrs.attr = '" + attrs[0] + "' AND attrs.value = '" + attrs[1] + "'";
+                query += "(attrs.attr = '" + attrs[0] + "' AND attrs.value = '" + attrs[1] + "')";
+                if(i != attributesSelected.size()-1) {
+                	query += " " + searchForChosen + " "; 
+                }
             }
+            query += ")";
             return query;
         } else {
             return null;
@@ -46,7 +48,7 @@ public class hw3 implements ActionListener {
     private String getAttributesQuery(List<String> mainCatsSelected, List<String> subCatsSelected, String dayChose, String fromChose, String toChosen, String searchForChosen) {
         if(mainCatsSelected.size() > 0 && subCatsSelected.size() > 0) {
             return "SELECT DISTINCT attrs.attr, attrs.value " 
-                  + getQueryAttributesMeat(mainCatsSelected, subCatsSelected, dayChose, fromChose, toChosen, searchForChosen);
+                  + getQueryAttributesMeat(mainCatsSelected, subCatsSelected, dayChose, fromChose, toChosen, searchForChosen) + ")";
         } else {
             return null;
         }
@@ -62,16 +64,22 @@ public class hw3 implements ActionListener {
             for(int i = 0; i < mainCatsSelected.size()+subCatsSelected.size(); i++) {
                 query += "b.business_id = c" + Integer.toString(i) + ".business AND ";
             }
+            query += "((";
             int i;
             for(i = 0; i < mainCatsSelected.size(); i++) {
-                query += "c" + Integer.toString(i) + ".name = '" + mainCatsSelected.get(i) + "' " + searchForChosen + " ";
+                query += "c" + Integer.toString(i) + ".name = '" + mainCatsSelected.get(i) + "' ";
+                if(i != mainCatsSelected.size()-1) {
+                	query += searchForChosen + " ";
+                }
             }
+            query += ") AND (";
             for(; i < subCatsSelected.size()+mainCatsSelected.size(); i++) {
                 query += "c" + Integer.toString(i) + ".name = '" + subCatsSelected.get(i-mainCatsSelected.size()) + "' ";
                 if(i != mainCatsSelected.size()+subCatsSelected.size()-1) {
                     query += searchForChosen + " ";
                 }
             }
+            query += ")";
             return query;
         } else {
             return null;
@@ -88,28 +96,28 @@ public class hw3 implements ActionListener {
             for(int i = 0; i < mainCatsSelected.size(); i++) {
                 query += "cat.name != '" + mainCatsSelected.get(i) + "' ";
                 if(i != mainCatsSelected.size()-1) {
-                    query += searchForChosen + " ";
-                } 
-            }
-            query += ") busWithCats WHERE ";
-            for(int i = 0; i < mainCatsSelected.size(); i++) {
-                query += "c.name = '" + mainCatsSelected.get(i) + "' ";
-                if(i != mainCatsSelected.size()-1) {
-                    if(searchForChosen.equals("AND")) {
+                	if(searchForChosen.equals("AND")) {
                         query += "OR ";
                     } else {
                         query += "AND ";
-                    }
+					}
                 } 
             }
-            query += " AND c.business = busWithCats.business";
+            query += ") busWithCats WHERE (";
+            for(int i = 0; i < mainCatsSelected.size(); i++) {
+                query += "c.name = '" + mainCatsSelected.get(i) + "' ";
+                if(i != mainCatsSelected.size()-1) {
+                	query += searchForChosen + " ";
+                } 
+            }
+            query += ") AND c.business = busWithCats.business";
             return query;
         } else {
             return null;
         }
     }
     
-    private void executeSearch() {
+    public int executeSearch() {
         List<String> mainCatsSelected = ui.mainCategoriesList.getSelectedValuesList();
         List<String> subCatsSelected = ui.subCategoriesList.getSelectedValuesList();
         List<String> attributesSelected = ui.attributesList.getSelectedValuesList();
@@ -118,12 +126,13 @@ public class hw3 implements ActionListener {
         String toChosen = (String) ui.toHoursDropdown.getSelectedItem();
         String searchForChosen = (String) ui.searchForDropdown.getSelectedItem();
 		if(!attributesSelected.isEmpty()) {
-			handleDetailsQuery(getDetailsQuery(mainCatsSelected, subCatsSelected, attributesSelected, dayChosen, fromChosen, toChosen, searchForChosen));
+			return handleDetailsQuery(getDetailsQuery(mainCatsSelected, subCatsSelected, attributesSelected, dayChosen, fromChosen, toChosen, searchForChosen));
 		} else if(!subCatsSelected.isEmpty()) {
-			handleAttributesQuery(getAttributesQuery(mainCatsSelected, subCatsSelected, dayChosen, fromChosen, toChosen, searchForChosen));
+			return handleAttributesQuery(getAttributesQuery(mainCatsSelected, subCatsSelected, dayChosen, fromChosen, toChosen, searchForChosen));
 		} else if(!mainCatsSelected.isEmpty()) {
-			handleSubCatsQuery(getSubCatsQuery(mainCatsSelected, searchForChosen));
+			return handleSubCatsQuery(getSubCatsQuery(mainCatsSelected, searchForChosen));
 		}
+		return 0;
     }
     
     private ResultSet executeQuery(String query) {
@@ -140,33 +149,33 @@ public class hw3 implements ActionListener {
 		return null;
     }
 
-	private void handleDetailsQuery(String detailsQuery) {
+	private int handleDetailsQuery(String detailsQuery) {
         if(detailsQuery == null) {
-            return;
+            return 0;
         }
-        ArrayList<String> names = new ArrayList<String>();
-        ArrayList<String> cities = new ArrayList<String>();
-        ArrayList<String> states = new ArrayList<String>();
-        ArrayList<String> stars = new ArrayList<String>();
+        ArrayList<String[]> details = new ArrayList<String[]>();
 		ResultSet rs = executeQuery(detailsQuery);
 		if(rs != null) {
 			try {
 				while(rs.next()) {
-					names.add(rs.getString(1));
-                    cities.add(rs.getString(2));
-                    states.add(rs.getString(3));
-                    stars.add(rs.getString(4));
+					String[] data = new String[4];
+					data[0] = rs.getString(1);
+		            data[1] = rs.getString(2);
+		            data[2] = rs.getString(3);
+		            data[3] = rs.getString(4);
+                    details.add(data);
 				}
 			} catch (SQLException e) {
 				Util.handleSQLException(e);
 			}
 		}
-        ui.fillDetails(names, cities, states, stars);
+        ui.setDetailsTable(details.toArray(new String[details.size()][4]));
+        return details.size();
 	}
 	
-	private void handleAttributesQuery(String attributesQuery) {
+	private int handleAttributesQuery(String attributesQuery) {
         if(attributesQuery == null) {
-            return;
+            return 0;
         }
         ArrayList<String> attributes = new ArrayList<String>();
 		ResultSet rs = executeQuery(attributesQuery);
@@ -182,11 +191,12 @@ public class hw3 implements ActionListener {
         String[] attrs = attributes.toArray(new String[attributes.size()]);
         Arrays.sort(attrs);
         ui.fillAttributes(attrs);
+        return attrs.length;
 	}
 
-    private void handleSubCatsQuery(String subCatsQuery) {
+    private int handleSubCatsQuery(String subCatsQuery) {
         if(subCatsQuery == null) {
-            return;
+            return 0;
         }
         ArrayList<String> categories = new ArrayList<String>();
     	ResultSet rs = executeQuery(subCatsQuery);
@@ -202,6 +212,7 @@ public class hw3 implements ActionListener {
         String[] cats = categories.toArray(new String[categories.size()]);
         Arrays.sort(cats);
         ui.fillSubcategories(cats);
+        return cats.length;
 	}
 
 	static void terminate() {
@@ -217,9 +228,7 @@ public class hw3 implements ActionListener {
     
     public void actionPerformed(ActionEvent e) {
         if(searchActionString.equals(e.getActionCommand())) {
-        	LoadingPopup lp = new LoadingPopup(ui);
-            executeSearch();
-            lp.close();
+        	new LoadingPopup(ui, this);
         } else if(closeActionString.equals(e.getActionCommand())) {
         	terminate();
         }

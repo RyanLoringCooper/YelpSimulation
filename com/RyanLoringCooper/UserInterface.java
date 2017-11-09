@@ -8,6 +8,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JTextArea;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.JTable;
 
 import java.awt.Dimension;
@@ -15,7 +16,6 @@ import java.awt.GridLayout;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -23,7 +23,8 @@ import java.util.List;
 public class UserInterface extends JFrame {
     
 	private static final long serialVersionUID = -668103667213956930L;
-    private static final String[] mainCategories = {"Active Life", "Arts & Entertainment", "Automotive", "Car Rental", "Cafes", "Beauty & Spas", "Conveniece Stores", "Dentists", "Doctors", "Drugstores", "Department Stores", "Education", "Event Planning & Services", "Flowers & Gifts", "Food", "Health & Medical", "Home Services", "Home & Garden", "Hospitals", "Hotels & Travel", "Hardware Stores", "Grocery", "Medical Centers", "Nurseries & Gardening", "Nightlife", "Restaurants", "Shopping", "Transportation"};
+	private static final String windowName = "Yelp Simulation";
+    private static final String[] mainCategories = {"Active Life", "Arts & Entertainment", "Automotive", "Car Rental", "Cafes", "Beauty & Spas", "Convenience Stores", "Dentists", "Doctors", "Drugstores", "Department Stores", "Education", "Event Planning & Services", "Flowers & Gifts", "Food", "Health & Medical", "Home Services", "Home & Garden", "Hospitals", "Hotels & Travel", "Hardware Stores", "Grocery", "Medical Centers", "Nurseries & Gardening", "Nightlife", "Restaurants", "Shopping", "Transportation"};
     private static final String[] daysOfTheWeek = {"Any", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
     private static final String[] hoursOfTheDay = {"12:00AM", "1:00AM", "2:00AM", "3:00AM", "4:00AM", "5:00AM", "6:00AM", "7:00AM", "8:00AM", "9:00AM", "10:00AM", "11:00AM", "12:00PM", "1:00PM", "2:00PM", "3:00PM", "4:00PM", "5:00PM", "6:00PM", "7:00PM", "8:00PM", "9:00PM", "10:00PM", "11:00PM"};
     protected static final String[] searchForOptions = {"AND", "OR"}; 
@@ -51,7 +52,8 @@ public class UserInterface extends JFrame {
     
     private void setupFirstWindow() {
     	addWindowListener(new WindowListener());
-        setName("Yelp Simulation");
+        setName(windowName);
+        setTitle(windowName);
         setLocation(10,20);
         setVisible(true);
         pack();
@@ -144,24 +146,6 @@ public class UserInterface extends JFrame {
         return listScroller;
     }
 
-    private JPanel getDetailsRow(String  one, String two, String three, String four) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-        JTextArea business = new JTextArea(one);
-        JTextArea city = new JTextArea(two);
-        JTextArea state = new JTextArea(three);
-        JTextArea stars = new JTextArea(four);
-        business.setPreferredSize(new Dimension(detailsHeaderMaxWidth, detailsHeaderHeight));
-        city.setPreferredSize(new Dimension(detailsHeaderMaxWidth/2, detailsHeaderHeight));
-        state.setPreferredSize(new Dimension(detailsHeaderMaxWidth/4, detailsHeaderHeight));
-        stars.setPreferredSize(new Dimension(detailsHeaderMaxWidth/4, detailsHeaderHeight));
-        panel.add(business);
-        panel.add(city);
-        panel.add(state);
-        panel.add(stars);
-        return panel;
-    }
-
     // panel that displays reviews about a selected business
     private JPanel getDetailsPanel() {
         JPanel panel = new JPanel();
@@ -172,23 +156,20 @@ public class UserInterface extends JFrame {
         return panel;
     }
 
-    private void setDetailsTable(String[][] data) {
+    public void setDetailsTable(String[][] data) {
         detailsTableData = data;
-        detailsTable = new JTable(detailsTableData, detailsColumnNames);
+        detailsTable = new JTable(new DefaultTableModel(detailsTableData, detailsColumnNames) {
+			private static final long serialVersionUID = -5147240233632955602L;
+
+			@Override
+        	public boolean isCellEditable(int row, int column) {
+        		return false;
+        	}
+        });
         detailsTable.setFillsViewportHeight(true);
         detailsTable.setColumnSelectionAllowed(false);
+        detailsTable.setDragEnabled(false);
         detailsScroller.setViewportView(detailsTable);
-    }
-
-    public void fillDetails(ArrayList<String> names, ArrayList<String> cities, ArrayList<String> states, ArrayList<String> stars) {
-        String[][] data = new String[names.size()][4];
-        for(int i = 0; i < names.size(); i++) {
-            data[i][0] = names.get(i);
-            data[i][1] = cities.get(i);
-            data[i][2] = states.get(i);
-            data[i][3] = stars.get(i);
-        }
-        setDetailsTable(data);
     }
 
     public void fillSubcategories(String[] cats) {

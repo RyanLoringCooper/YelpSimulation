@@ -99,3 +99,5 @@ END;
 
 /* Indexes */
 CREATE INDEX reviewIndex ON Review(business_id);
+
+CREATE INDEX categoryIndex ON Category(name);

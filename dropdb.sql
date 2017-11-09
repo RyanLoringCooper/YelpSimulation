@@ -1,4 +1,5 @@
 /* Indexes */
+DROP INDEX categoryIndex;
 DROP INDEX reviewIndex;
 
 /* Functions */
