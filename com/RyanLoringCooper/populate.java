@@ -290,19 +290,24 @@ public class populate {
 
     private void handleInserts(String[] inserts) {
     	if(inserts != null) {
-			try {
-				Statement statement = conn.createStatement();
-				for(String insert : inserts) {
-					if(argParser.debug()) {
-						System.out.println(insert);
-						insertLogger.write((insert + ";\n").getBytes());
-					}
-					statement.executeUpdate(insert);
+    		for(String insert : inserts) {
+				try {
+					Statement statement = conn.createStatement();
+						if(argParser.debug()) {
+							System.out.println(insert);
+							insertLogger.write((insert + ";\n").getBytes());
+						}
+						statement.executeUpdate(insert);
+				} catch (SQLException e) {
+					/*if(e.getErrorCode() == 72000) {
+						System.err.println("Duplicate entry was not inserted into database.");
+						continue;
+					}*/
+					Util.handleSQLException(e);
+					break;
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
-			} catch (SQLException e) {
-				Util.handleSQLException(e);
-			} catch (IOException e) {
-				e.printStackTrace();
 			}
     	}
     }

@@ -38,18 +38,39 @@ public class LoadingPopup extends JDialog {
         pack();
 		new Thread() {
 			public void run() {
-				if(searcher.executeSearch() > 0) {
-					setVisible(false);
-				} else {
-					t.setText("No rows were selected");
-					closeOnX = true;
-					try {
-						sleep(5000);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
+				int rowsSelected = searcher.executeSearch();
+				if(rowsSelected > 0) {
+					switch(searcher.getNumSearches()) {
+						case 1:
+							t.setText(Integer.toString(rowsSelected) + " subcategories were selected.");
+							break;
+						case 2:
+							t.setText(Integer.toString(rowsSelected) + " attributes were selected.");
+							break;
+						case 3:
+							t.setText(Integer.toString(rowsSelected) + " locations were selected.");
+							break;
+						case 4:
+							t.setText(Integer.toString(rowsSelected) + " businesses were selected.");
+							break;
+						case 5:
+							t.setText(Integer.toString(rowsSelected) + " reviews were selected.");
+							break;
+						default:
+							t.setText("An unknown action was preformed.");
+							break;
 					}
-					setVisible(false);
+				} else {
+					t.setText("No rows were selected.");
+					
 				}
+				closeOnX = true;
+				try {
+					sleep(5000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				setVisible(false);
 			}
 		}.start();
 		setVisible(true);
