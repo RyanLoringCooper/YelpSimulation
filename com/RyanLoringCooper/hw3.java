@@ -130,7 +130,40 @@ public class hw3 implements ActionListener {
         } 
 		return null;
     }
-    
+
+    private String getBusinessID(String[] businessChosen) {
+        if(businessChosen == null && businessChosen.length() == 4) {
+            String q = "SELECT b.business_id FROM Business b WHERE " 
+                     + "b.name = '" + businessChosen[0] + "' "
+                     + "b.city = '" + businessChosen[1] + "' "
+                     + "b.state = '" + businessChosen[2] + "' "
+                     + "b.stars = '" + businessChosen[3] + "'";
+            ResultSet rs = executeQuery(q);
+            String retval = null;
+            if(rs != null) {
+                try {
+                    while(rs.next()) {
+                        retval = rs.getString(1);
+                    }
+                } catch (SQLException e) {
+                    Util.handleSQLException(e);
+                }
+            }
+            return retval;
+        }
+        return null;    
+    }
+
+    private String getReviewsQuery(String[] businessChosen) {
+        String bid = getBusinessID(businessChosen);
+        if(bid != null) {
+            String query = "SELECT r.date_field, r.stars, r.text, r.user_id, r.votes "
+                         + "FROM Review r WHERE r.business_id = '" + bid + "'";
+            return query
+        }
+        return null;
+    }
+
     public int executeSearch() {
         List<String> mainCatsSelected = ui.mainCategoriesList.getSelectedValuesList();
 		if(!mainCatsSelected.isEmpty()) {
@@ -142,6 +175,7 @@ public class hw3 implements ActionListener {
 			String toChosen = (String) ui.toHoursDropdown.getSelectedItem();
 			String locationChosen = (String) ui.locationDropdown.getSelectedItem();
 			String searchForChosen = (String) ui.searchForDropdown.getSelectedItem();
+            String[] businessChosen = ui.detailsTableData[ui.detailsTable.getSelectedRow()];
 			switch (numSearches) {
 				case 1:
 					return handleSubCatsQuery(getSubCatsQuery(mainCatsSelected, dayChosen, fromChosen, toChosen, searchForChosen));
@@ -152,7 +186,7 @@ public class hw3 implements ActionListener {
 				case 4:
 					return handleDetailsQuery(getDetailsQuery(mainCatsSelected, subCatsSelected, attributesSelected, dayChosen, fromChosen, toChosen, locationChosen, searchForChosen));
 				case 5:
-				//	return handleReviewsQuery(getReviewsQuery(businessChosen, dayChosen, fromChosen, searchForChosen)));
+					return handleReviewsQuery(getReviewsQuery(businessChosen));
 				default:
 					numSearches = 0;
 			}
@@ -173,6 +207,24 @@ public class hw3 implements ActionListener {
 			Util.handleSQLException(e);
 		}
 		return null;
+    }
+
+    private int handleReviewsQuery(String query) {
+        if(detailsQuery == null) {
+            return 0;
+        }   
+        ArrayList<String[]> reviews = new ArrayList<String[]>();
+		if(rs != null) {
+			try {
+				while(rs.next()) {
+
+				}
+			} catch (SQLException e) {
+				Util.handleSQLException(e);
+			}
+		}
+        
+        return reviews.size();
     }
 
 	private int handleDetailsQuery(String detailsQuery) {
