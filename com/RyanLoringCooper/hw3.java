@@ -30,14 +30,14 @@ public class hw3 implements ActionListener {
 
     private String getDetailsQuery(List<String> mainCatsSelected, List<String> subCatsSelected, List<String> attributesSelected, String dayChosen, String fromChosen, String toChosen, String locationChosen, String searchForChosen) {
         if(mainCatsSelected.size() > 0) {
-    	    return "SELECT DISTINCT b.name, b.city, b.state, b.stars "
+    	    return "SELECT DISTINCT b.name, b.city, b.state, b.stars FROM Business b, table(b.attributes) attrs, table(b.hours) hours"
     	    	 + getDetailsQueryMeat(mainCatsSelected, subCatsSelected, attributesSelected, dayChosen, fromChosen, toChosen, locationChosen, searchForChosen);
     	    
         }
         return null;
     }
     private String getDetailsQueryMeat(List<String> mainCatsSelected, List<String> subCatsSelected, List<String> attributesSelected, String dayChosen, String fromChosen, String toChosen, String locationChosen, String searchForChosen) {
-		String query = getQueryAttributesMeat(mainCatsSelected, subCatsSelected, dayChosen, fromChosen, toChosen, searchForChosen);
+		String query = getQueryAttributesMeat(mainCatsSelected, subCatsSelected, searchForChosen);
 		if(attributesSelected.size() > 0) {
 			query += " AND ";
 			for(int i = 0; i < attributesSelected.size(); i++) {
@@ -52,25 +52,50 @@ public class hw3 implements ActionListener {
 			String[] loc = locationChosen.split(",");
 			query += " AND b.city = '" + loc[0] + "' AND b.state = '" + loc[1] + "'";
 		}
+		if(!dayChosen.equals(UserInterface.dropdownDefaultString)) {
+			query += " AND hours.day = '" + dayChosen + "'";
+		}
+		if(!fromChosen.equals(UserInterface.dropdownDefaultString)) {
+			query += " AND hours.open = '" + fromChosen + "'";
+		}
+		if(!toChosen.equals(UserInterface.dropdownDefaultString)) {
+			query += " AND hours.close = '" + toChosen + "'";
+		}
 		query += ")";
 		return query;
     }
     
-    private String getLocationsQuery(List<String> mainCatsSelected, List<String> subCatsSelected, List<String> attributesSelected, String dayChosen, String fromChosen, String toChosen, String searchForChosen) {
-    	return "SELECT DISTINCT b.city, b.state " + getDetailsQueryMeat(mainCatsSelected, subCatsSelected, attributesSelected, dayChosen, fromChosen, toChosen, UserInterface.dropdownDefaultString, searchForChosen);
+    private String[] getOperationsQueries(List<String> mainCatsSelected, List<String> subCatsSelected, List<String> attributesSelected, String locationChosen, String searchForChosen) {
+    	if(mainCatsSelected.size() > 0) {
+			String whereClause = getDetailsQueryMeat(mainCatsSelected, subCatsSelected, attributesSelected, UserInterface.dropdownDefaultString, UserInterface.dropdownDefaultString, UserInterface.dropdownDefaultString, locationChosen, searchForChosen);
+			String days = "SELECT DISTINCT hours.day FROM Business b, table(b.attributes) attrs, table(b.hours) hours" + whereClause;
+			String from = "SELECT DISTINCT hours.open FROM Business b, table(b.attributes) attrs, table(b.hours) hours" + whereClause;
+			String to = "SELECT DISTINCT hours.close FROM Business b, table(b.attributes) attrs, table(b.hours) hours" + whereClause;
+			String[] retval = {days, from, to};
+			return retval;
+    	} 
+    	return null;
+    }
+    
+    private String getLocationsQuery(List<String> mainCatsSelected, List<String> subCatsSelected, List<String> attributesSelected, String searchForChosen) {
+    	if(mainCatsSelected.size() > 0) {
+			return "SELECT DISTINCT b.city, b.state FROM Business b, table(b.attributes) attrs " 
+				 + getDetailsQueryMeat(mainCatsSelected, subCatsSelected, attributesSelected, UserInterface.dropdownDefaultString, UserInterface.dropdownDefaultString, UserInterface.dropdownDefaultString, UserInterface.dropdownDefaultString, searchForChosen);
+    	}
+    	return null;
     }
 
-    private String getAttributesQuery(List<String> mainCatsSelected, List<String> subCatsSelected, String dayChosen, String fromChosen, String toChosen, String searchForChosen) {
+    private String getAttributesQuery(List<String> mainCatsSelected, List<String> subCatsSelected, String searchForChosen) {
         if(mainCatsSelected.size() > 0) {
-            return "SELECT DISTINCT attrs.attr, attrs.value " 
-                  + getQueryAttributesMeat(mainCatsSelected, subCatsSelected, dayChosen, fromChosen, toChosen, searchForChosen) + ")";
+            return "SELECT DISTINCT attrs.attr, attrs.value FROM Business b, table(b.attributes) attrs" 
+                  + getQueryAttributesMeat(mainCatsSelected, subCatsSelected, searchForChosen) + ")";
         }
 		return null;
     }
     
-	private String getQueryAttributesMeat(List<String> mainCatsSelected, List<String> subCatsSelected, String dayChosen, String fromChosen, String toChosen, String searchForChosen) {
+	private String getQueryAttributesMeat(List<String> mainCatsSelected, List<String> subCatsSelected, String searchForChosen) {
         if(mainCatsSelected.size() > 0) {
-            String query = "FROM Business b, table(b.attributes) attrs";
+            String query = "";
             for(int i = 0; i < mainCatsSelected.size()+subCatsSelected.size(); i++) {
                 query += ", Category c" + Integer.toString(i);
             }
@@ -101,7 +126,7 @@ public class hw3 implements ActionListener {
 		return null;
     }
     
-    private String getSubCatsQuery(List<String> mainCatsSelected, String dayChosen, String fromChosen, String toChosen, String searchForChosen) {
+    private String getSubCatsQuery(List<String> mainCatsSelected, String searchForChosen) {
         if(mainCatsSelected.size() > 0) {
             String query = "SELECT DISTINCT busWithCats.name "
                          + "FROM Category c, ( "
@@ -132,7 +157,7 @@ public class hw3 implements ActionListener {
     }
 
     private String getBusinessID(String[] businessChosen) {
-        if(businessChosen == null && businessChosen.length() == 4) {
+        if(businessChosen != null && businessChosen.length == 4) {
             String q = "SELECT b.business_id FROM Business b WHERE " 
                      + "b.name = '" + businessChosen[0] + "' "
                      + "b.city = '" + businessChosen[1] + "' "
@@ -149,6 +174,11 @@ public class hw3 implements ActionListener {
                     Util.handleSQLException(e);
                 }
             }
+            try {
+				rs.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
             return retval;
         }
         return null;    
@@ -159,7 +189,7 @@ public class hw3 implements ActionListener {
         if(bid != null) {
             String query = "SELECT r.date_field, r.stars, r.text, r.user_id, r.votes "
                          + "FROM Review r WHERE r.business_id = '" + bid + "'";
-            return query
+            return query;
         }
         return null;
     }
@@ -175,17 +205,22 @@ public class hw3 implements ActionListener {
 			String toChosen = (String) ui.toHoursDropdown.getSelectedItem();
 			String locationChosen = (String) ui.locationDropdown.getSelectedItem();
 			String searchForChosen = (String) ui.searchForDropdown.getSelectedItem();
-            String[] businessChosen = ui.detailsTableData[ui.detailsTable.getSelectedRow()];
+			String[] businessChosen = null;
+			if(ui.detailsTable.getSelectedRow() != -1) {
+				businessChosen = ui.detailsTableData[ui.detailsTable.getSelectedRow()];
+			}
 			switch (numSearches) {
 				case 1:
-					return handleSubCatsQuery(getSubCatsQuery(mainCatsSelected, dayChosen, fromChosen, toChosen, searchForChosen));
+					return handleSubCatsQuery(getSubCatsQuery(mainCatsSelected, searchForChosen));
 				case 2:
-					return handleAttributesQuery(getAttributesQuery(mainCatsSelected, subCatsSelected, dayChosen, fromChosen, toChosen, searchForChosen));
+					return handleAttributesQuery(getAttributesQuery(mainCatsSelected, subCatsSelected, searchForChosen));
 				case 3:
-					return handleLocationsQuery(getLocationsQuery(mainCatsSelected, subCatsSelected, attributesSelected, dayChosen, fromChosen, toChosen, searchForChosen));
+					return handleLocationsQuery(getLocationsQuery(mainCatsSelected, subCatsSelected, attributesSelected, searchForChosen));
 				case 4:
-					return handleDetailsQuery(getDetailsQuery(mainCatsSelected, subCatsSelected, attributesSelected, dayChosen, fromChosen, toChosen, locationChosen, searchForChosen));
+					return handleOperationsQueries(getOperationsQueries(mainCatsSelected, subCatsSelected, attributesSelected, locationChosen, searchForChosen));
 				case 5:
+					return handleDetailsQuery(getDetailsQuery(mainCatsSelected, subCatsSelected, attributesSelected, dayChosen, fromChosen, toChosen, locationChosen, searchForChosen));
+				case 6:
 					return handleReviewsQuery(getReviewsQuery(businessChosen));
 				default:
 					numSearches = 0;
@@ -196,9 +231,8 @@ public class hw3 implements ActionListener {
     }
     
     private ResultSet executeQuery(String query) {
-    	Statement statement;
 		try {
-			statement = conn.createStatement();
+			Statement statement = conn.createStatement();
 			if(argParser.debug()) {
 				System.out.println(query);
 			}
@@ -209,21 +243,22 @@ public class hw3 implements ActionListener {
 		return null;
     }
 
-    private int handleReviewsQuery(String query) {
-        if(detailsQuery == null) {
+    private int handleReviewsQuery(String reviewsQuery) {
+        if(reviewsQuery == null) {
             return 0;
         }   
         ArrayList<String[]> reviews = new ArrayList<String[]>();
+        ResultSet rs = executeQuery(reviewsQuery);
 		if(rs != null) {
 			try {
 				while(rs.next()) {
-
+					// TODO
 				}
+				rs.close();
 			} catch (SQLException e) {
 				Util.handleSQLException(e);
 			}
 		}
-        
         return reviews.size();
     }
 
@@ -243,12 +278,72 @@ public class hw3 implements ActionListener {
 		            data[3] = rs.getString(4);
                     details.add(data);
 				}
+				rs.close();
 			} catch (SQLException e) {
 				Util.handleSQLException(e);
 			}
 		}
         ui.setDetailsTable(details.toArray(new String[details.size()][4]));
         return details.size();
+	}
+	
+	private int handleDaysQuery(String daysQuery) {
+		ArrayList<String> days = new ArrayList<String>();
+		ResultSet rs = executeQuery(daysQuery);
+		if(rs != null) {
+			try {
+				while(rs.next()) {
+					days.add(rs.getString(1));
+				}
+				rs.close();
+			} catch (SQLException e) {
+				Util.handleSQLException(e);
+			}
+		}
+		ui.fillDays(days.toArray(new String[days.size()]));
+		return days.size();
+	}
+	
+	private int handleFromQuery(String fromQuery) {
+		ArrayList<String> froms = new ArrayList<String>();
+		ResultSet rs = executeQuery(fromQuery);
+		if(rs != null) {
+			try {
+				while(rs.next()) {
+					froms.add(rs.getString(1));
+				}
+				rs.close();
+			} catch (SQLException e) {
+				Util.handleSQLException(e);
+			}
+		}
+		ui.fillFroms(froms.toArray(new String[froms.size()]));
+		return froms.size();
+	}
+	private int handleToQuery(String toQuery) {
+		ArrayList<String> tos = new ArrayList<String>();
+		ResultSet rs = executeQuery(toQuery);
+		if(rs != null) {
+			try {
+				while(rs.next()) {
+					tos.add(rs.getString(1));
+				}
+				rs.close();
+			} catch (SQLException e) {
+				Util.handleSQLException(e);
+			}
+		}
+		ui.fillTos(tos.toArray(new String[tos.size()]));
+		return tos.size();
+	}
+	private int handleOperationsQueries(String[] operationsQueries) {
+		if(operationsQueries == null) {
+			return 0;
+		}
+		int days = handleDaysQuery(operationsQueries[0]);
+		int froms = handleFromQuery(operationsQueries[1]);
+		int tos = handleToQuery(operationsQueries[2]);
+		return days*froms*tos;
 	}
 	
 	private int handleAttributesQuery(String attributesQuery) {
@@ -262,6 +357,7 @@ public class hw3 implements ActionListener {
 				while(rs.next()) {
                     attributes.add(rs.getString(1) + "=" + rs.getString(2));
                 }
+				rs.close();
 			} catch (SQLException e) {
 				Util.handleSQLException(e);
 			}
@@ -283,6 +379,7 @@ public class hw3 implements ActionListener {
 				while(rs.next()) {
                     locations.add(rs.getString(1) + "," + rs.getString(2));
                 }
+				rs.close();
 			} catch (SQLException e) {
 				Util.handleSQLException(e);
 			}
@@ -304,6 +401,7 @@ public class hw3 implements ActionListener {
 				while(rs.next()) {
                     categories.add(rs.getString(1));
 				}
+				rs.close();
 			} catch (SQLException e) {
 				Util.handleSQLException(e);
 			}

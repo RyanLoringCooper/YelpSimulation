@@ -20,7 +20,7 @@ import java.awt.event.WindowEvent;
 public class UserInterface extends JFrame {
     
 	private static final long serialVersionUID = -668103667213956930L;
-	private static final String windowName = "Yelp Simulation";
+	private static final String windowName = "Yelp Simulation", statusLabelPretext = "The next search will retrieve ";
 	public static final String dropdownDefaultString = "Any";
     private static final String[] mainCategories = {"Active Life", "Arts & Entertainment", "Automotive", "Car Rental", "Cafes", "Beauty & Spas", "Convenience Stores", "Dentists", "Doctors", "Drugstores", "Department Stores", "Education", "Event Planning & Services", "Flowers & Gifts", "Food", "Health & Medical", "Home Services", "Home & Garden", "Hospitals", "Hotels & Travel", "Hardware Stores", "Grocery", "Medical Centers", "Nurseries & Gardening", "Nightlife", "Restaurants", "Shopping", "Transportation"};
     protected static final String[] searchForOptions = {"AND", "OR"}; 
@@ -29,6 +29,7 @@ public class UserInterface extends JFrame {
     protected JScrollPane subCategoriesScroller, attributesScroller, detailsScroller;
     protected JList<String> mainCategoriesList, subCategoriesList, attributesList;
     protected JTable detailsTable;
+    protected JLabel statusLabel;
     protected String[][] detailsTableData;
     protected String[] detailsColumnNames = {"Business", "City", "State", "Stars"}, locationDefault = {dropdownDefaultString}, daysOfTheWeek = {dropdownDefaultString}, hoursOfTheDay = {dropdownDefaultString};
     protected JComboBox<String> weekDayDropdown, fromHoursDropdown, toHoursDropdown, locationDropdown, searchForDropdown;
@@ -58,9 +59,18 @@ public class UserInterface extends JFrame {
     private JPanel firstView() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS)); 
+        panel.add(getStatusBar());
         panel.add(getCenterPanel());
         panel.add(getDropdownsPanel());
         return panel;
+    }
+    
+    private JPanel getStatusBar() {
+    	JPanel panel = new JPanel();
+    	panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    	statusLabel = new JLabel(statusLabelPretext + "subcategories.");
+    	panel.add(statusLabel);
+    	return panel;
     }
 
     private JPanel getCenterPanel() {
@@ -177,6 +187,9 @@ public class UserInterface extends JFrame {
         detailsTable.setColumnSelectionAllowed(false);
         detailsTable.setDragEnabled(false);
         detailsScroller.setViewportView(detailsTable);
+        if(data.length > 0) {
+        	statusLabel.setText(statusLabelPretext + "reviews.");
+        }
     }
 
     public void fillSubcategories(String[] cats) {
@@ -184,6 +197,7 @@ public class UserInterface extends JFrame {
         subCategoriesList.setLayoutOrientation(JList.VERTICAL);
         subCategoriesList.setVisibleRowCount(-1);
         subCategoriesScroller.setViewportView(subCategoriesList);
+        statusLabel.setText(statusLabelPretext + "attributes.");
     }
 
     public void fillAttributes(String[] attrs) {
@@ -191,6 +205,7 @@ public class UserInterface extends JFrame {
         attributesList.setLayoutOrientation(JList.VERTICAL);
         attributesList.setVisibleRowCount(-1);
         attributesScroller.setViewportView(attributesList);
+        statusLabel.setText(statusLabelPretext + "locations.");
     }
     
     public void fillLocations(String[] locs) {
@@ -199,6 +214,32 @@ public class UserInterface extends JFrame {
     	for(String loc : locs) {
     		locationDropdown.addItem(loc);
     	}
+    	statusLabel.setText(statusLabelPretext + "operating times.");
+    }
+    
+    public void fillDays(String[] days) {
+    	weekDayDropdown.removeAllItems();
+    	weekDayDropdown.addItem(dropdownDefaultString);
+    	for(String day : days) {
+    		weekDayDropdown.addItem(day);
+    	}
+    }
+    
+    public void fillFroms(String[] froms) {
+    	fromHoursDropdown.removeAllItems();
+    	fromHoursDropdown.addItem(dropdownDefaultString);
+    	for(String from : froms) {
+    		fromHoursDropdown.addItem(from);
+    	}
+    }
+    
+    public void fillTos(String[] tos) {
+    	toHoursDropdown.removeAllItems();
+    	toHoursDropdown.addItem(dropdownDefaultString);
+    	for(String to : tos) {
+    		toHoursDropdown.addItem(to);
+    	}
+        statusLabel.setText(statusLabelPretext + "details.");
     }
     
     public void reset() {

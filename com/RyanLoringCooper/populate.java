@@ -293,11 +293,12 @@ public class populate {
     		for(String insert : inserts) {
 				try {
 					Statement statement = conn.createStatement();
-						if(argParser.debug()) {
-							System.out.println(insert);
-							insertLogger.write((insert + ";\n").getBytes());
-						}
-						statement.executeUpdate(insert);
+					if(argParser.debug()) {
+						System.out.println(insert);
+						insertLogger.write((insert + ";\n").getBytes());
+					}
+					statement.executeUpdate(insert);
+					statement.close();
 				} catch (SQLException e) {
 					/*if(e.getErrorCode() == 72000) {
 						System.err.println("Duplicate entry was not inserted into database.");
