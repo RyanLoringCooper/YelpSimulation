@@ -21,10 +21,8 @@ public class UserInterface extends JFrame {
     
 	private static final long serialVersionUID = -668103667213956930L;
 	private static final String windowName = "Yelp Simulation";
-	public static final String locationDefaultString = "Any";
+	public static final String dropdownDefaultString = "Any";
     private static final String[] mainCategories = {"Active Life", "Arts & Entertainment", "Automotive", "Car Rental", "Cafes", "Beauty & Spas", "Convenience Stores", "Dentists", "Doctors", "Drugstores", "Department Stores", "Education", "Event Planning & Services", "Flowers & Gifts", "Food", "Health & Medical", "Home Services", "Home & Garden", "Hospitals", "Hotels & Travel", "Hardware Stores", "Grocery", "Medical Centers", "Nurseries & Gardening", "Nightlife", "Restaurants", "Shopping", "Transportation"};
-    private static final String[] daysOfTheWeek = {"Any", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-    private static final String[] hoursOfTheDay = {"12:00AM", "1:00AM", "2:00AM", "3:00AM", "4:00AM", "5:00AM", "6:00AM", "7:00AM", "8:00AM", "9:00AM", "10:00AM", "11:00AM", "12:00PM", "1:00PM", "2:00PM", "3:00PM", "4:00PM", "5:00PM", "6:00PM", "7:00PM", "8:00PM", "9:00PM", "10:00PM", "11:00PM"};
     protected static final String[] searchForOptions = {"AND", "OR"}; 
     protected static final int detailsHeaderHeight = 12, detailsHeaderMaxWidth = 160, mainSectionHeight = 500;
     // modify these by calling *scroller.setViewportView(new JList<JTextArea>(JTextArea[] info));
@@ -32,7 +30,7 @@ public class UserInterface extends JFrame {
     protected JList<String> mainCategoriesList, subCategoriesList, attributesList;
     protected JTable detailsTable;
     protected String[][] detailsTableData;
-    protected String[] detailsColumnNames = {"Business", "City", "State", "Stars"}, locationDefault = {locationDefaultString};
+    protected String[] detailsColumnNames = {"Business", "City", "State", "Stars"}, locationDefault = {dropdownDefaultString}, daysOfTheWeek = {dropdownDefaultString}, hoursOfTheDay = {dropdownDefaultString};
     protected JComboBox<String> weekDayDropdown, fromHoursDropdown, toHoursDropdown, locationDropdown, searchForDropdown;
     private ActionListener al;
 
@@ -197,7 +195,7 @@ public class UserInterface extends JFrame {
     
     public void fillLocations(String[] locs) {
     	locationDropdown.removeAllItems();
-    	locationDropdown.addItem(locationDefaultString);
+    	locationDropdown.addItem(dropdownDefaultString);
     	for(String loc : locs) {
     		locationDropdown.addItem(loc);
     	}

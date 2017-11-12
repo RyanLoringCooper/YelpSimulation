@@ -48,7 +48,7 @@ public class hw3 implements ActionListener {
 				}
 			}
 		}
-		if(!locationChosen.equals(UserInterface.locationDefaultString)) {
+		if(!locationChosen.equals(UserInterface.dropdownDefaultString)) {
 			String[] loc = locationChosen.split(",");
 			query += " AND b.city = '" + loc[0] + "' AND b.state = '" + loc[1] + "'";
 		}
@@ -57,7 +57,7 @@ public class hw3 implements ActionListener {
     }
     
     private String getLocationsQuery(List<String> mainCatsSelected, List<String> subCatsSelected, List<String> attributesSelected, String dayChosen, String fromChosen, String toChosen, String searchForChosen) {
-    	return "SELECT DISTINCT b.city, b.state " + getDetailsQueryMeat(mainCatsSelected, subCatsSelected, attributesSelected, dayChosen, fromChosen, toChosen, UserInterface.locationDefaultString, searchForChosen);
+    	return "SELECT DISTINCT b.city, b.state " + getDetailsQueryMeat(mainCatsSelected, subCatsSelected, attributesSelected, dayChosen, fromChosen, toChosen, UserInterface.dropdownDefaultString, searchForChosen);
     }
 
     private String getAttributesQuery(List<String> mainCatsSelected, List<String> subCatsSelected, String dayChosen, String fromChosen, String toChosen, String searchForChosen) {

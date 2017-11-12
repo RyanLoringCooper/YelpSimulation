@@ -7,16 +7,16 @@ import org.json.JSONObject;
 
 public class ArgumentParser {
 
-    private static final String helpTextFront = "Usage: java -jar ", helpTextBack = ".jar [-h|d|j] -host hostname -port portNum [-user username -password password] [-dbname dbname] jsonFile1 jsonFile2 jsonFile3 ...\n\t"
+    private static final String helpTextFront = "Usage: java -jar ", helpTextBack = ".jar [-h|d|j] -host hostname -port portNum -dbname dbname [-user username -password password] jsonFile1 jsonFile2 jsonFile3 ...\n\t"
                                             +"-h: display this help text\n\t"
                                             +"-d: display debug messages\n\t"
                                             +"-j: display JSON objects as they are being created"
                                             +"-host: specifies that a hostname is the next argument\n\t"
                                             +"-port: specifies that a port number to connect to the host is the next argument\n\t"
+                                            +"-dbname: specifies that the name of the database is the next argument\n"
                                             +"-user: specifies that the username to log into the database is the next argument (default is read from ./credentials)\n\t"
-                                            +"-password: specifies that the password to log into the database is the next argument (default is read from ./credentials)\n\t"
-                                            +"-dbname: specifies that the name of the database is the next argument (default = XE)\n";
-	private String hostname = null, port = null, username = null, password = null, dbName = "XE";
+                                            +"-password: specifies that the password to log into the database is the next argument (default is read from ./credentials)\n\t";
+	private String hostname = null, port = null, username = null, password = null, dbName = null;
 	private JSONObject[] businesses, users, reviews;
 	private boolean debug = false, showJson = false, isValidArgs = false;
 	
@@ -93,6 +93,10 @@ public class ArgumentParser {
         if(port == null) {
             System.err.println("You must provide a port number using the -port flag.");
             return false;
+        }
+        if(dbName == null) {
+        	System.err.println("You must provide a database name using the -dbname flag.");
+        	return false;
         }
         if(username == null || password == null) {
         	if(!getCredentials(debug)) {
