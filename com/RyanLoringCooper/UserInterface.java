@@ -250,5 +250,6 @@ public class UserInterface extends JFrame {
     	fillSubcategories(new String[0]);
     	fillAttributes(new String[0]);
     	setDetailsTable(new String[0][0]);
+        statusLabel.setText(statusLabelPretext + "subcategories.");
     }
 }

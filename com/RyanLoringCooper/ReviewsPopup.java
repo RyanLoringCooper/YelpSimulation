@@ -1,22 +1,27 @@
 package com.RyanLoringCooper;
 
 import java.awt.Frame;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.Dimension;
 
 import javax.swing.table.DefaultTableModel;
 import javax.swing.JDialog;
-import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.JScrollPane;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
 
-public class ReviewsPopup extends JDialog implements MouseListener {
+public class ReviewsPopup extends JDialog implements ActionListener {
 	private static final long serialVersionUID = 2872961479552207911L;
+    private static final String viewButtonText = "View Review Text";
 	private String[][] reviews;
 	private String[] columnNames = {"Date", "Stars", "Text", "UserID", "Votes"};
     private Dimension size = new Dimension(800, 800);
     private Thread mainThread;
+    private JTable reviewsTable;
 
     public ReviewsPopup(String[][] reviews, Frame frame) {
         super(frame, true);
@@ -28,7 +33,17 @@ public class ReviewsPopup extends JDialog implements MouseListener {
 
     private void setupWindow() {
         setTitle("Reviews Viewer");
-        JTable reviewsTable = new JTable(new DefaultTableModel(reviews, columnNames){
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.add(getTable());
+        panel.add(getButton());
+        setContentPane(panel);
+        setPreferredSize(size);
+        pack();
+    }
+
+    private JScrollPane getTable() {
+        reviewsTable = new JTable(new DefaultTableModel(reviews, columnNames){
 			private static final long serialVersionUID = -8021583007741092559L;
 
 			@Override
@@ -42,9 +57,14 @@ public class ReviewsPopup extends JDialog implements MouseListener {
         JScrollPane reviewsScroller = new JScrollPane();
         reviewsScroller.setPreferredSize(size);
         reviewsScroller.setViewportView(reviewsTable);
-        setContentPane(reviewsScroller);
-        setPreferredSize(size);
-        pack();
+        return reviewsScroller;
+    }
+
+    private JButton getButton() {
+        JButton button = new JButton(viewButtonText);
+        button.setActionCommand(viewButtonText);
+        button.addActionListener(this);
+        return button;
     }
 
     private void setupThread() {
@@ -58,39 +78,20 @@ public class ReviewsPopup extends JDialog implements MouseListener {
     }
 
     @Override
-    public void mouseClicked(MouseEvent e) {
-        if(e.getClickCount() == 2) {
-            JTable target = (JTable)e.getSource();
-            int row = target.getSelectedRow();
-            createTextPopup(reviews[row][2]);
+    public void actionPerformed(ActionEvent e) {
+        if(viewButtonText.equals(e.getActionCommand())) {
+            int row = reviewsTable.getSelectedRow();
+            if(row > -1) {
+				createTextPopup(reviews[row][2]);
+            }
         }
     }
 
     private void createTextPopup(String text) {
         JDialog textPopup = new JDialog(this, true);
         textPopup.setLocationRelativeTo(this);
-        textPopup.setContentPane(new JLabel(text));
+        textPopup.setContentPane(new JTextArea(text));
         textPopup.pack();
         textPopup.setVisible(true);
     }
-
-	@Override
-	public void mouseEntered(MouseEvent arg0) {
-		
-	}
-
-	@Override
-	public void mouseExited(MouseEvent arg0) {
-		
-	}
-
-	@Override
-	public void mousePressed(MouseEvent arg0) {
-		
-	}
-
-	@Override
-	public void mouseReleased(MouseEvent arg0) {
-		
-	}
 }

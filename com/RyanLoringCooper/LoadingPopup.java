@@ -18,7 +18,7 @@ import javax.swing.JPanel;
 public class LoadingPopup extends JDialog implements ActionListener {
 	private static final long serialVersionUID = -2907349847536636724L;
 	private static final String waitingText = "Waiting for search results", closeButtonText = "Close";
-	private static Dimension size = new Dimension(500, 100);
+	private static Dimension size = new Dimension(600, 200);
 	private boolean closeOnX = false;
 	private JLabel label;
 	private JButton closeButton;
