@@ -77,7 +77,7 @@ public class UserInterface extends JFrame {
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(1, 2));
         panel.add(getListsPanel());
-        panel.add(getDetailsPanel());
+        panel.add(getDetailsScroller());
         return panel;
     }
 
@@ -164,13 +164,11 @@ public class UserInterface extends JFrame {
     }
 
     // panel that displays reviews about a selected business
-    private JPanel getDetailsPanel() {
-        JPanel panel = new JPanel();
-        panel.setPreferredSize(new Dimension(detailsHeaderMaxWidth*4, mainSectionHeight));
+    private JScrollPane getDetailsScroller() {
         detailsScroller = new JScrollPane();
+        detailsScroller.setPreferredSize(new Dimension(detailsHeaderMaxWidth*4, mainSectionHeight));
         setDetailsTable(new String[0][0]);
-        panel.add(detailsScroller);
-        return panel;
+        return detailsScroller;
     }
 
     public void setDetailsTable(String[][] data) {

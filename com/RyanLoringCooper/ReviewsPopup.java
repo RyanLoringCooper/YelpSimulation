@@ -90,7 +90,13 @@ public class ReviewsPopup extends JDialog implements ActionListener {
     private void createTextPopup(String text) {
         JDialog textPopup = new JDialog(this, true);
         textPopup.setLocationRelativeTo(this);
-        textPopup.setContentPane(new JTextArea(text));
+        JScrollPane scroller = new JScrollPane();
+        scroller.setPreferredSize(size);
+        JTextArea textarea = new JTextArea(text);
+        textarea.setEditable(false);
+        textarea.setLineWrap(true);
+        scroller.setViewportView(textarea);
+        textPopup.setContentPane(scroller);
         textPopup.pack();
         textPopup.setVisible(true);
     }
