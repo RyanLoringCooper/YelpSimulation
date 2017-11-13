@@ -160,9 +160,9 @@ public class hw3 implements ActionListener {
         if(businessChosen != null && businessChosen.length == 4) {
             String q = "SELECT b.business_id FROM Business b WHERE " 
                      + "b.name = '" + businessChosen[0] + "' "
-                     + "b.city = '" + businessChosen[1] + "' "
-                     + "b.state = '" + businessChosen[2] + "' "
-                     + "b.stars = '" + businessChosen[3] + "'";
+                     + "AND b.city = '" + businessChosen[1] + "' "
+                     + "AND b.state = '" + businessChosen[2] + "' "
+                     + "AND b.stars = '" + businessChosen[3] + "'";
             ResultSet rs = executeQuery(q);
             String retval = null;
             if(rs != null) {
@@ -248,7 +248,7 @@ public class hw3 implements ActionListener {
 		if(rs != null) {
 			try {
 				while(rs.next()) {
-                    String data = new String[5];
+                    String[] data = new String[5];
                     data[0] = rs.getString(1);
                     data[1] = rs.getString(2);
                     data[2] = rs.getString(3);
@@ -261,7 +261,7 @@ public class hw3 implements ActionListener {
 				Util.handleSQLException(e);
 			}
 		}
-        ui.fillReviewsPopup(reviews.toArray(new String[reviews.size()][5]);
+        ui.fillReviewsPopup(reviews.toArray(new String[reviews.size()][5]));
         return reviews.size();
     }
 
