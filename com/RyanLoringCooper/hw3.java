@@ -37,7 +37,7 @@ public class hw3 implements ActionListener {
         return null;
     }
     private String getDetailsQueryMeat(List<String> mainCatsSelected, List<String> subCatsSelected, List<String> attributesSelected, String dayChosen, String fromChosen, String toChosen, String locationChosen, String searchForChosen) {
-		String query = getQueryAttributesMeat(mainCatsSelected, subCatsSelected, searchForChosen);
+		String query = "";
 		if(attributesSelected.size() > 0) {
 			query += " AND ";
 			for(int i = 0; i < attributesSelected.size(); i++) {
@@ -79,8 +79,40 @@ public class hw3 implements ActionListener {
     
     private String getLocationsQuery(List<String> mainCatsSelected, List<String> subCatsSelected, List<String> attributesSelected, String searchForChosen) {
     	if(mainCatsSelected.size() > 0) {
-			return "SELECT DISTINCT b.city, b.state FROM Business b, table(b.attributes) attrs " 
-				 + getDetailsQueryMeat(mainCatsSelected, subCatsSelected, attributesSelected, UserInterface.dropdownDefaultString, UserInterface.dropdownDefaultString, UserInterface.dropdownDefaultString, UserInterface.dropdownDefaultString, searchForChosen);
+    		ArrayList<String> queries = new ArrayList<String>();
+    		String start = "SELECT DISTINCT b.city, b.state FROM Business b, table(b.attributes) attrs, Category cMain, Category cSub WHERE ";
+            for(int i = 0; i < mainCatsSelected.size(); i++) {
+            	String query = start + "b.business_id = cMain.business AND cMain.name = '" + mainCatsSelected.get(i) + "'";
+            	if(subCatsSelected.size() > 0) {
+					for(int j = 0; j < subCatsSelected.size(); j++) {
+						query += " AND b.business_id = cSub.business"
+							   + " AND cSub.name = '" + subCatsSelected.get(j) + "' ";
+						if(attributesSelected.size() > 0) {
+							for(int k = 0; k < attributesSelected.size(); k++) {
+								String[] attrs = attributesSelected.get(k).split("=");
+								query += " AND (attrs.attr = '" + attrs[0] + "' AND attrs.value = '" + attrs[1] + "') ";
+								queries.add(query);
+							}
+						} else {
+							queries.add(query);
+						}
+					}
+            	} else {
+					queries.add(query);
+            	}
+            }
+            String query = "";
+            for(int i = 0; i < queries.size(); i++) {
+            	query += queries.get(i);
+            	if(i != queries.size()-1) {
+					if(searchForChosen.equals("AND")) {
+						query += "INTERSECT ";
+					} else {
+						query += "UNION ";
+					}
+            	}
+            }
+            return query;
     	}
     	return null;
     }
@@ -109,69 +141,31 @@ public class hw3 implements ActionListener {
                     }
                 }
             }
-            return query;
+            return query; 
         }
-		return null;
-    }
-    
-	private String getQueryAttributesMeat(List<String> mainCatsSelected, List<String> subCatsSelected, String searchForChosen) {
-        if(mainCatsSelected.size() > 0) {
-            String query = "";
-            for(int i = 0; i < mainCatsSelected.size()+subCatsSelected.size(); i++) {
-                query += ", Category c" + Integer.toString(i);
-            }
-            query += " WHERE ";
-            for(int i = 0; i < mainCatsSelected.size()+subCatsSelected.size(); i++) {
-                query += "b.business_id = c" + Integer.toString(i) + ".business AND ";
-            }
-            query += "((";
-            int i;
-            for(i = 0; i < mainCatsSelected.size(); i++) {
-                query += "c" + Integer.toString(i) + ".name = '" + mainCatsSelected.get(i) + "' ";
-                if(i != mainCatsSelected.size()-1) {
-                	query += searchForChosen + " ";
-                }
-            }
-            if(subCatsSelected.size() > 0) {
-            	query += ") AND (";
-				for(; i < subCatsSelected.size()+mainCatsSelected.size(); i++) {
-					query += "c" + Integer.toString(i) + ".name = '" + subCatsSelected.get(i-mainCatsSelected.size()) + "' ";
-					if(i != mainCatsSelected.size()+subCatsSelected.size()-1) {
-						query += searchForChosen + " ";
-					}
-				}
-            }
-            query += ")";
-            return query;
-        } 
 		return null;
     }
     
     private String getSubCatsQuery(List<String> mainCatsSelected, String searchForChosen) {
         if(mainCatsSelected.size() > 0) {
-            String query = "SELECT DISTINCT busWithCats.name "
-                         + "FROM Category c, ( "
-                            + "SELECT * " 
-                            + "FROM Category cat "
-                            + "WHERE ";
-            for(int i = 0; i < mainCatsSelected.size(); i++) {
-                query += "cat.name != '" + mainCatsSelected.get(i) + "' ";
-                if(i != mainCatsSelected.size()-1) {
+            String query = "";
+            for(int k = 0; k < mainCatsSelected.size(); k++) {
+            	query += "SELECT DISTINCT busWithCats.name "
+                        + "FROM Category c, ( "
+                        + "SELECT * " 
+                        + "FROM Category cat "
+                        + "WHERE cat.name != '" + mainCatsSelected.get(k) + "' "
+            			+ ") busWithCats WHERE "
+            			+ "c.name = '" + mainCatsSelected.get(k) + "'"
+            			+ " AND c.business = busWithCats.business";
+                if(k != mainCatsSelected.size()-1) {
                 	if(searchForChosen.equals("AND")) {
-                        query += "OR ";
+                        query += " INTERSECT ";
                     } else {
-                        query += "AND ";
+                        query += " UNION ";
 					}
                 } 
             }
-            query += ") busWithCats WHERE (";
-            for(int i = 0; i < mainCatsSelected.size(); i++) {
-                query += "c.name = '" + mainCatsSelected.get(i) + "' ";
-                if(i != mainCatsSelected.size()-1) {
-                	query += searchForChosen + " ";
-                } 
-            }
-            query += ") AND c.business = busWithCats.business";
             return query;
         } 
 		return null;
