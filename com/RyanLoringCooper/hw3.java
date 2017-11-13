@@ -157,18 +157,18 @@ public class hw3 implements ActionListener {
             for(int i = 0; i < mainCatsSelected.size(); i++) {
                 query += "cat.name != '" + mainCatsSelected.get(i) + "' ";
                 if(i != mainCatsSelected.size()-1) {
-                	if(searchForChosen.equals("AND")) {
-                        query += "OR ";
-                    } else {
-                        query += "AND ";
-					}
+                	query += searchForChosen + " ";
                 } 
             }
             query += ") busWithCats WHERE (";
             for(int i = 0; i < mainCatsSelected.size(); i++) {
                 query += "c.name = '" + mainCatsSelected.get(i) + "' ";
                 if(i != mainCatsSelected.size()-1) {
-                	query += searchForChosen + " ";
+                	if(searchForChosen.equals("AND")) {
+                        query += "OR ";
+                    } else {
+                        query += "AND ";
+					}
                 } 
             }
             query += ") AND c.business = busWithCats.business";
