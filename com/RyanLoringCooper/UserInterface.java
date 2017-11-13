@@ -241,6 +241,10 @@ public class UserInterface extends JFrame {
     	}
         statusLabel.setText(statusLabelPretext + "details.");
     }
+
+    public void fillReviewsPopup(String[] reviews) {
+        new ReviewsPopup(reviews, this);
+    }
     
     public void reset() {
     	fillSubcategories(new String[0]);

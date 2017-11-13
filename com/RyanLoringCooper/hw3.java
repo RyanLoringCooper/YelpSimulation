@@ -170,15 +170,11 @@ public class hw3 implements ActionListener {
                     while(rs.next()) {
                         retval = rs.getString(1);
                     }
+				    rs.close();
                 } catch (SQLException e) {
                     Util.handleSQLException(e);
                 }
             }
-            try {
-				rs.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
             return retval;
         }
         return null;    
@@ -252,13 +248,20 @@ public class hw3 implements ActionListener {
 		if(rs != null) {
 			try {
 				while(rs.next()) {
-					// TODO
+                    String data = new String[5];
+                    data[0] = rs.getString(1);
+                    data[1] = rs.getString(2);
+                    data[2] = rs.getString(3);
+                    data[3] = rs.getString(4);
+                    data[4] = rs.getString(5);
+                    reviews.add(data);
 				}
 				rs.close();
 			} catch (SQLException e) {
 				Util.handleSQLException(e);
 			}
 		}
+        ui.fillReviewsPopup(reviews.toArray(new String[reviews.size()][5]);
         return reviews.size();
     }
 
