@@ -86,31 +86,10 @@ public class hw3 implements ActionListener {
     }
 
     private String getAttributesQuery(List<String> mainCatsSelected, List<String> subCatsSelected, String searchForChosen) {
-        if(mainCatsSelected.size() > 0) {
-        	String start = "SELECT DISTINCT attrs.attr, attrs.value FROM Business b, table(b.attributes) attrs, Category cMain, Category cSub WHERE ";
-            String query = "";
-            for(int i = 0; i < mainCatsSelected.size(); i++) {
-                for(int j = 0; j < subCatsSelected.size(); j++) {
-                    query += start + "b.business_id = cMain.business AND b.business_id = cSub.business AND cMain.name = '" + mainCatsSelected.get(i) 
-                            + "' AND cSub.name = '" + subCatsSelected.get(j) + "' ";
-                    if(j != subCatsSelected.size()-1) {
-                        if(searchForChosen.equals("AND")) {
-                            query += "INTERSECT ";
-                        } else {
-                            query += "UNION ";
-                        }
-                    }
-                }
-                if(i != mainCatsSelected.size()-1) {
-                    if(searchForChosen.equals("AND")) {
-                        query += "INTERSECT ";
-                    } else {
-                        query += "UNION ";
-                    }
-                }
-            }
-            return query;
-        }
+    	if(mainCatsSelected.size() > 0) {
+            return "SELECT DISTINCT attrs.attr, attrs.value FROM Business b, table(b.attributes) attrs" 
+                  + getQueryAttributesMeat(mainCatsSelected, subCatsSelected, searchForChosen) + ")";
+    	}
 		return null;
     }
     
