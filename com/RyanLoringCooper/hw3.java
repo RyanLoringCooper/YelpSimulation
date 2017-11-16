@@ -42,7 +42,7 @@ public class hw3 implements ActionListener {
 			query += " AND ";
 			for(int i = 0; i < attributesSelected.size(); i++) {
 				String[] attrs = attributesSelected.get(i).split("=");
-				query += "(attrs.attr = '" + attrs[0] + "' AND attrs.value = '" + attrs[1] + "')";
+				query += "(attrs.attr = '" + Util.cleanString(attrs[0]) + "' AND attrs.value = '" + Util.cleanString(attrs[1]) + "')";
 				if(i != attributesSelected.size()-1) {
 					query += " " + searchForChosen + " "; 
 				}
@@ -50,7 +50,7 @@ public class hw3 implements ActionListener {
 		}
 		if(!locationChosen.equals(UserInterface.dropdownDefaultString)) {
 			String[] loc = locationChosen.split(",");
-			query += " AND b.city = '" + loc[0] + "' AND b.state = '" + loc[1] + "'";
+			query += " AND b.city = '" + Util.cleanString(loc[0]) + "' AND b.state = '" + Util.cleanString(loc[1]) + "'";
 		}
 		if(!dayChosen.equals(UserInterface.dropdownDefaultString)) {
 			query += " AND hours.day = '" + dayChosen + "'";
@@ -106,7 +106,7 @@ public class hw3 implements ActionListener {
             query += "((";
             int i;
             for(i = 0; i < mainCatsSelected.size(); i++) {
-                query += "c" + Integer.toString(i) + ".name = '" + mainCatsSelected.get(i) + "' ";
+                query += "c" + Integer.toString(i) + ".name = '" + Util.cleanString(mainCatsSelected.get(i)) + "' ";
                 if(i != mainCatsSelected.size()-1) {
                 	query += searchForChosen + " ";
                 }
@@ -114,7 +114,7 @@ public class hw3 implements ActionListener {
             if(subCatsSelected.size() > 0) {
             	query += ") AND (";
 				for(; i < subCatsSelected.size()+mainCatsSelected.size(); i++) {
-					query += "c" + Integer.toString(i) + ".name = '" + subCatsSelected.get(i-mainCatsSelected.size()) + "' ";
+					query += "c" + Integer.toString(i) + ".name = '" + Util.cleanString(subCatsSelected.get(i-mainCatsSelected.size())) + "' ";
 					if(i != mainCatsSelected.size()+subCatsSelected.size()-1) {
 						query += searchForChosen + " ";
 					}
@@ -134,14 +134,14 @@ public class hw3 implements ActionListener {
                             + "FROM Category cat "
                             + "WHERE ";
             for(int i = 0; i < mainCatsSelected.size(); i++) {
-                query += "cat.name != '" + mainCatsSelected.get(i) + "' ";
+                query += "cat.name != '" + Util.cleanString(mainCatsSelected.get(i)) + "' ";
                 if(i != mainCatsSelected.size()-1) {
                 	query += searchForChosen + " ";
                 } 
             }
             query += ") busWithCats WHERE (";
             for(int i = 0; i < mainCatsSelected.size(); i++) {
-                query += "c.name = '" + mainCatsSelected.get(i) + "' ";
+                query += "c.name = '" + Util.cleanString(mainCatsSelected.get(i)) + "' ";
                 if(i != mainCatsSelected.size()-1) {
                 	if(searchForChosen.equals("AND")) {
                         query += "OR ";
@@ -159,10 +159,10 @@ public class hw3 implements ActionListener {
     private String getBusinessID(String[] businessChosen) {
         if(businessChosen != null && businessChosen.length == 4) {
             String q = "SELECT b.business_id FROM Business b WHERE " 
-                     + "b.name = '" + businessChosen[0] + "' "
-                     + "AND b.city = '" + businessChosen[1] + "' "
-                     + "AND b.state = '" + businessChosen[2] + "' "
-                     + "AND b.stars = '" + businessChosen[3] + "'";
+                     + "b.name = '" + Util.cleanString(businessChosen[0]) + "' "
+                     + "AND b.city = '" + Util.cleanString(businessChosen[1]) + "' "
+                     + "AND b.state = '" + Util.cleanString(businessChosen[2]) + "' "
+                     + "AND b.stars = '" + Util.cleanString(businessChosen[3]) + "'";
             ResultSet rs = executeQuery(q);
             String retval = null;
             if(rs != null) {
@@ -184,7 +184,7 @@ public class hw3 implements ActionListener {
         String bid = getBusinessID(businessChosen);
         if(bid != null) {
             String query = "SELECT r.date_field, r.stars, r.text, r.user_id, r.votes "
-                         + "FROM Review r WHERE r.business_id = '" + bid + "'";
+                         + "FROM Review r WHERE r.business_id = '" + Util.cleanString(bid) + "'";
             return query;
         }
         return null;
