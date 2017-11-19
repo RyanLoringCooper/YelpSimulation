@@ -23,9 +23,10 @@ public class populate {
     private static final String[] businessValues = {"business_id", "full_address", "hours", "open", "city", "review_count", "name", "neighborhoods", "longitude", "state", "stars", "latitude", "attributes"};
     private static final String[] userValues = {"yelping_since", "votes", "review_count", "name", "user_id", "fans", "average_stars", "elite"};
     private static final String[] reviewValues = {"votes", "user_id", "review_id", "stars", "date_field", "text", "business_id"};
-    private Connection conn;
+    private static final int numInsertsPerThread = 1<<20;
     private ArgumentParser argParser;
 	private FileOutputStream insertLogger;
+	private String[] businessInserts, userInserts, reviewInserts;
 
     private populate(String[] args) {
     	argParser = new ArgumentParser(args, className);
@@ -33,19 +34,39 @@ public class populate {
         	if(argParser.debug()) {
         		setupInsertLogger();
         	}
-        	conn = Util.setupDatabaseConnection(argParser);
-        	if(conn != null) {
-				handleInserts(getBusinessInserts(argParser.getBusinesses()));
-				handleInserts(getUserInserts(argParser.getUsers()));
-				handleInserts(getReviewInserts(argParser.getReviews()));
-				try {
-					conn.close();
-				} catch (SQLException e) {
-					Util.handleSQLException(e);
-				}
-				return;
-        	}
-        	System.err.println("Could not set up database connection.");
+           
+            Thread bus = new Thread() {
+            	@Override
+            	public void run() {
+            		handleInserts(getBusinessInserts(argParser.getBusinesses()));
+            	}
+            },
+    		use = new Thread() {
+            	@Override
+            	public void run() {
+            		handleInserts(getUserInserts(argParser.getUsers()));
+            	}
+            },
+    		rev = new Thread() {
+            	@Override
+            	public void run() {
+            		handleInserts(getReviewInserts(argParser.getReviews()));
+            	}
+            };
+            try {
+            	bus.start();
+            	bus.join();
+                businessInserts = null;
+            	System.gc();
+                use.start();
+            	use.join();
+                userInserts = null;
+            	System.gc();
+            	rev.start();
+            	rev.join();
+            } catch(InterruptedException e) {
+            	e.printStackTrace();
+            }
         } 
     }
 
@@ -177,6 +198,9 @@ public class populate {
     	if(businesses == null) {
     		return null;
     	}
+    	if(argParser.debug()) {
+    		System.out.println("Creating business inserts from JSON objects.");
+    	}
         ArrayList<String> inserts = new ArrayList<String>();
         ArrayList<CategoryStruct> categories = new ArrayList<CategoryStruct>();
         for(int i = 0; i < businesses.length; i++) {
@@ -216,6 +240,9 @@ public class populate {
     private String[] getUserInserts(JSONObject[] users) {
     	if(users == null) {
     		return null;
+    	}
+    	if(argParser.debug()) {
+    		System.out.println("Creating user inserts from JSON objects.");
     	}
         String[] inserts = new String[users.length];
         for(int i = 0; i < inserts.length; i++) {
@@ -261,6 +288,9 @@ public class populate {
     	if(reviews == null) {
     		return null;
     	}
+    	if(argParser.debug()) {
+    		System.out.println("Creating review inserts from JSON objects.");
+    	}
         ArrayList<String> inserts = new ArrayList<String>();
         for(int i = 0; i < reviews.length; i++) {
             String s = new String(reviewString);
@@ -288,28 +318,68 @@ public class populate {
         return inserts.toArray(new String[inserts.size()]);
     }
 
+    private String[][] splitIntoGroups(String[] strs, int sizeOfGroup, int numGroups) {
+    	String[][] retval = new String[numGroups][];
+        for(int i = 0; i < numGroups; i++) {
+            ArrayList<String> temp = new ArrayList<String>();
+            for(int j = 0; j < sizeOfGroup && j+i*sizeOfGroup < strs.length; j++) {
+                temp.add(strs[j+i*sizeOfGroup]);
+            }
+            retval[i] = (temp.toArray(new String[temp.size()]));
+        }
+        return retval;
+    }
+
+    private void insert(String[] inserts) {
+        Connection conn = Util.setupDatabaseConnection(argParser);
+        for(String insert : inserts) {
+            try {
+                Statement statement = conn.createStatement();
+                if(argParser.debug()) {
+                    System.out.println(insert);
+                   // insertLogger.write((insert + ";\n").getBytes());
+                }
+                statement.executeUpdate(insert);
+                statement.close();
+            } catch (SQLException e) {
+                /*if(e.getErrorCode() == 72000) {
+                    System.err.println("Duplicate entry was not inserted into database.");
+                    continue;
+                }*/
+                Util.handleSQLException(e);
+                break;
+            }
+        }
+        try {
+            conn.close();
+        } catch (SQLException e) {
+            Util.handleSQLException(e);
+        }
+    }
+
     private void handleInserts(String[] inserts) {
     	if(inserts != null) {
-    		for(String insert : inserts) {
-				try {
-					Statement statement = conn.createStatement();
-					if(argParser.debug()) {
-						System.out.println(insert);
-						insertLogger.write((insert + ";\n").getBytes());
-					}
-					statement.executeUpdate(insert);
-					statement.close();
-				} catch (SQLException e) {
-					/*if(e.getErrorCode() == 72000) {
-						System.err.println("Duplicate entry was not inserted into database.");
-						continue;
-					}*/
-					Util.handleSQLException(e);
-					break;
-				} catch (IOException e) {
+            int numThreads = (int) Math.ceil(inserts.length/(double)numInsertsPerThread);
+            String[][] splitInserts = splitIntoGroups(inserts, numInsertsPerThread, numThreads);
+            Thread[] threads = new Thread[numThreads];
+            for(int i = 0; i < numThreads; i++) {
+            	String[] insertForThread = splitInserts[i];
+                threads[i] = new Thread() {
+                    @Override 
+                    public void run() {
+                        insert(insertForThread);
+                    }
+                };
+                threads[i].start();
+            }
+            for(int i = 0; i < numThreads; i++) {
+            	try {
+					threads[i].join();
+					System.gc();
+				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-			}
+            }
     	}
     }
 

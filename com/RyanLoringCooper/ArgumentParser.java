@@ -10,14 +10,14 @@ public class ArgumentParser {
     private static final String helpTextFront = "Usage: java -jar ", helpTextBack = ".jar [-h|d|j] -host hostname -port portNum -dbname dbname [-user username -password password] jsonFile1 jsonFile2 jsonFile3 ...\n\t"
                                             +"-h: display this help text\n\t"
                                             +"-d: display debug messages\n\t"
-                                            +"-j: display JSON objects as they are being created"
+                                            +"-j: display JSON objects as they are being created\n\t"
                                             +"-host: specifies that a hostname is the next argument\n\t"
                                             +"-port: specifies that a port number to connect to the host is the next argument\n\t"
                                             +"-dbname: specifies that the name of the database is the next argument\n"
                                             +"-user: specifies that the username to log into the database is the next argument (default is read from ./credentials)\n\t"
                                             +"-password: specifies that the password to log into the database is the next argument (default is read from ./credentials)\n\t";
 	private String hostname = null, port = null, username = null, password = null, dbName = null;
-	private JSONObject[] businesses, users, reviews;
+	private String businesses, users, reviews;
 	private boolean debug = false, showJson = false, isValidArgs = false;
 	
     public ArgumentParser(String[] args, String jarName) {
@@ -76,12 +76,11 @@ public class ArgumentParser {
             } else if(args[i].equals("-j")) {
                 showJson = true;
             } else if(args[i].matches("[/A-Za-z_.]*business[A-Za-z_.]*")) {
-                businesses = getJSONObjects(args[i]);
-                
+            	businesses = args[i];
             } else if(args[i].matches("[/A-Za-z_.]*user[A-Za-z_.]*")) {
-                users = getJSONObjects(args[i]);
+            	users = args[i];
             } else if(args[i].matches("[/A-Za-z_.]*review[A-Za-z_.]*")) {
-                reviews = getJSONObjects(args[i]);
+				reviews = args[i];
             } else {
                 System.out.println(args[i] + " was not used.");
             }
@@ -140,6 +139,9 @@ public class ArgumentParser {
     }
     
     private JSONObject[] getJSONObjects(String filePath) {
+    	if(debug) {
+    		System.out.println("Creating JSON objects from " + filePath);
+    	}
    		JSONObject[] objs =  Util.createJSONObjects(filePath);
     	if(debug) {
 			System.out.println("Created JSON objects from " + filePath);
@@ -186,14 +188,14 @@ public class ArgumentParser {
 	}
 	
 	public JSONObject[] getBusinesses() {
-		return businesses;
+		return getJSONObjects(businesses);
 	}
 	
 	public JSONObject[] getUsers() {
-		return users;
+		return getJSONObjects(users);
 	}
 	
 	public JSONObject[] getReviews() {
-		return reviews;
+		return getJSONObjects(reviews);
 	}
 }
