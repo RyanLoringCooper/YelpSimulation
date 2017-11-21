@@ -23,7 +23,7 @@ public class populate {
     private static final String[] businessValues = {"business_id", "full_address", "hours", "open", "city", "review_count", "name", "neighborhoods", "longitude", "state", "stars", "latitude", "attributes"};
     private static final String[] userValues = {"yelping_since", "votes", "review_count", "name", "user_id", "fans", "average_stars", "elite"};
     private static final String[] reviewValues = {"votes", "user_id", "review_id", "stars", "date_field", "text", "business_id"};
-    private static final int numInsertsPerThread = 1<<20;
+    private static final int numThreads = 24;
     private ArgumentParser argParser;
 	private FileOutputStream insertLogger;
 	private String[] businessInserts, userInserts, reviewInserts;
@@ -38,7 +38,7 @@ public class populate {
             Thread bus = new Thread() {
             	@Override
             	public void run() {
-            		handleInserts(getBusinessInserts(argParser.getBusinesses()));
+            		handleBusinessInserts(getBusinessInserts(argParser.getBusinesses()));
             	}
             },
     		use = new Thread() {
@@ -194,7 +194,7 @@ public class populate {
         return s;
     }
     
-    private String[] getBusinessInserts(JSONObject[] businesses) {
+    private String[][] getBusinessInserts(JSONObject[] businesses) {
     	if(businesses == null) {
     		return null;
     	}
@@ -227,14 +227,18 @@ public class populate {
             s += ")";
             inserts.add(s);
         }
+        ArrayList<String> categoryInserts = new ArrayList<String>();
         // generate Categories Inserts
         for(int i = 0; i < categories.size(); i++) {
             String s = new String(categoryString);
             CategoryStruct cs = categories.get(i);
             s += Integer.toString(i) + ",'" + Util.cleanString(cs.cat) + "','" + Util.cleanString(cs.bid) + "')";
-            inserts.add(s);
+            categoryInserts.add(s);
         }
-        return inserts.toArray(new String[inserts.size()]);
+        String[][] retval = new String[2][];
+        retval[0] = inserts.toArray(new String[inserts.size()]);
+        retval[1] = categoryInserts.toArray(new String[categoryInserts.size()]);
+        return retval;
     }
 
     private String[] getUserInserts(JSONObject[] users) {
@@ -359,7 +363,7 @@ public class populate {
 
     private void handleInserts(String[] inserts) {
     	if(inserts != null) {
-            int numThreads = (int) Math.ceil(inserts.length/(double)numInsertsPerThread);
+    		int numInsertsPerThread = 1<<(int) Math.ceil(Math.log(inserts.length/(double)numThreads)/Math.log(2));
             String[][] splitInserts = splitIntoGroups(inserts, numInsertsPerThread, numThreads);
             Thread[] threads = new Thread[numThreads];
             for(int i = 0; i < numThreads; i++) {
@@ -381,6 +385,11 @@ public class populate {
 				}
             }
     	}
+    }
+    
+    private void handleBusinessInserts(String[][] inserts) {
+    	handleInserts(inserts[0]);
+    	handleInserts(inserts[1]);
     }
 
     public static void main(String[] args) {

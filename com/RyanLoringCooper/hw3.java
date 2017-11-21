@@ -85,11 +85,64 @@ public class hw3 implements ActionListener {
     	return null;
     }
 
-    private String getAttributesQuery(List<String> mainCatsSelected, List<String> subCatsSelected, String searchForChosen) {
-    	if(mainCatsSelected.size() > 0) {
-            return "SELECT DISTINCT attrs.attr, attrs.value FROM Business b, table(b.attributes) attrs" 
-                  + getQueryAttributesMeat(mainCatsSelected, subCatsSelected, searchForChosen) + ")";
+    private String getBusinessInCatsQuery(List<String> cats) {
+    	String query = "SELECT DISTINCT c0.business business FROM";
+    	for(int i = 0; i < cats.size(); i++) {
+    		query += " Category c" + Integer.toString(i);
+		   if(i != cats.size()-1) {
+			   query += ",";
+		   }
+    	} 
+    	query += " WHERE";
+    	for(int i = 0; i < cats.size()-1; i++) {
+    		query += " c" + Integer.toString(i) + ".business = c" + Integer.toString(i+1) + ".business"
+    				+ " AND c" + Integer.toString(i) + ".name = '" + Util.cleanString(cats.get(i)) + "' AND";
+		   
     	}
+    	query += " c" + Integer.toString(cats.size()-1) + ".name = '" + Util.cleanString(cats.get(cats.size()-1)) +"'";
+    	return query;
+    }
+    
+    private String getAttributesQuery(List<String> mainCatsSelected, List<String> subCatsSelected, String searchForChosen) {
+   		if(mainCatsSelected.size() > 0) {
+   			String query = "WITH Cats as ( ";
+   			if(searchForChosen == "AND") {
+				mainCatsSelected.addAll(subCatsSelected);
+				query += getBusinessInCatsQuery(mainCatsSelected);
+				
+   			} else {
+   				if(subCatsSelected.size() == 0) {
+   					for(int i = 0; i < mainCatsSelected.size(); i++) {
+   						ArrayList<String> temp = new ArrayList<String>();
+   						temp.add(mainCatsSelected.get(i));
+   						query += getBusinessInCatsQuery(temp);
+   						if(i != mainCatsSelected.size()-1) {
+   							query += " UNION ";
+   						}
+   					}
+   				} else {
+				   ArrayList<ArrayList<String>> catPairs = new ArrayList<ArrayList<String>>();
+				   for(int i = 0; i < mainCatsSelected.size(); i++) {
+					   for(int j = 0; j < subCatsSelected.size(); j++) {
+						   ArrayList<String> pair = new ArrayList<String>();
+						   pair.add(mainCatsSelected.get(i));
+						   pair.add(subCatsSelected.get(j));
+						   catPairs.add(pair);
+					   }
+				   }
+				   for(int i = 0; i < catPairs.size(); i++) {
+					   query += getBusinessInCatsQuery(catPairs.get(i));
+					   if(i != catPairs.size()-1) {
+						   query += " UNION ";
+					   }
+				   }
+   				}
+   			}
+   			query += ") SELECT DISTINCT attrs.attr, attrs.value "
+   					+ "FROM Business b, table(b.attributes) attrs, Cats c "
+   					+ "WHERE c.business = b.business_id";
+			return query;
+   		}
 		return null;
     }
     
@@ -126,39 +179,54 @@ public class hw3 implements ActionListener {
 		return null;
     }
     
-    private String getSubCatsQuery(List<String> mainCatsSelected, String searchForChosen) {
+    private String getSubCatsQueryAndFrom(List<String> mainCatsSelected) {
         if(mainCatsSelected.size() > 0) {
-            String query = "SELECT DISTINCT busWithCats.name "
-                         + "FROM Category c, ( "
-                            + "SELECT * " 
-                            + "FROM Category cat "
-                            + "WHERE ";
+            String query = "FROM ";
             for(int i = 0; i < mainCatsSelected.size(); i++) {
-                query += "cat.name != '" + Util.cleanString(mainCatsSelected.get(i)) + "' ";
-                if(i != mainCatsSelected.size()-1) {
-                	query += searchForChosen + " ";
-                } 
+            	query += "Category c" + Integer.toString(i) + ", ";
             }
-            query += ") busWithCats WHERE (";
+            query += "Category subCats WHERE ";
             for(int i = 0; i < mainCatsSelected.size(); i++) {
-                query += "c.name = '" + Util.cleanString(mainCatsSelected.get(i)) + "' ";
-                if(i != mainCatsSelected.size()-1) {
-                	if(searchForChosen.equals("AND")) {
-                        query += "OR ";
-                    } else {
-                        query += "AND ";
-					}
-                } 
+            	query += "subCats.business = c" + Integer.toString(i) + ".business AND ";
+            	query += "subCats.name != c" + Integer.toString(i) + ".name AND "; 
+            	query += "c" + Integer.toString(i) + ".name = '" + Util.cleanString(mainCatsSelected.get(i)) + "' ";
+            	if(i != mainCatsSelected.size()-1) {
+            		query += "AND ";
+            	}
             }
-            query += ") AND c.business = busWithCats.business";
             return query;
         } 
 		return null;
     }
+    
+    private String getSubCatsQueryOrFrom(List<String> mainCatsSelected, String select) {
+    	String query = "";
+    	for(int i = 0; i < mainCatsSelected.size(); i++) {
+			ArrayList<String> cat = new ArrayList<String>();
+			cat.add(mainCatsSelected.get(i));
+			query += select + getSubCatsQueryAndFrom(cat);
+			if(i != mainCatsSelected.size()-1) {
+				query += " UNION ";
+			}
+			
+		}
+    	return query;
+    }
 
+    private String getSubCatsQuery(List<String> mainCatsSelected, String searchForChosen) {
+    	String select = "SELECT DISTINCT subCats.name ";
+    	String query;
+    	if(searchForChosen == "AND") {
+    		query = select + getSubCatsQueryAndFrom(mainCatsSelected);
+    	} else {
+    		query = getSubCatsQueryOrFrom(mainCatsSelected, select);
+    	}
+    	return query;
+    }
+    
     private String getBusinessID(String[] businessChosen) {
         if(businessChosen != null && businessChosen.length == 4) {
-            String q = "SELECT b.business_id FROM Business b WHERE " 
+            String q = "SELECT DISTINCT b.business_id FROM Business b WHERE " 
                      + "b.name = '" + Util.cleanString(businessChosen[0]) + "' "
                      + "AND b.city = '" + Util.cleanString(businessChosen[1]) + "' "
                      + "AND b.state = '" + Util.cleanString(businessChosen[2]) + "' "
