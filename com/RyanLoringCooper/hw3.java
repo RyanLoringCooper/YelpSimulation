@@ -65,21 +65,16 @@ public class hw3 implements ActionListener {
 		return query;
     }
     
-    private String[] getOperationsQueries(List<String> mainCatsSelected, List<String> subCatsSelected, List<String> attributesSelected, String locationChosen, String searchForChosen) {
+    private String getOperationsQueries(List<String> mainCatsSelected, List<String> subCatsSelected, List<String> attributesSelected, String locationChosen, String searchForChosen) {
     	if(mainCatsSelected.size() > 0) {
-    		String daysSelect = "SELECT DISTINCT hours.day ";
-    		String fromSelect = "SELECT DISTINCT hours.open ";
-    		String toSelect = "SELECT DISTINCT hours.close ";
+    		String select = "SELECT DISTINCT hours.day, hours.open, hours.close ";
     		String locationWhere = "";
     		if(locationChosen.equals("ANY")) {
     			String[] loc = locationChosen.split(",");
     			locationWhere = " AND b.city = '" + Util.cleanString(loc[0]) + "' AND b.state = '" + Util.cleanString(loc[1]) + "'";
     		}
-    		String days = getLocations(mainCatsSelected, subCatsSelected, attributesSelected, searchForChosen, daysSelect, ", table(b.hours) hours ") + locationWhere;
-    		String from = getLocations(mainCatsSelected, subCatsSelected, attributesSelected, searchForChosen, fromSelect, ", table(b.hours) hours ") + locationWhere;
-    		String to = getLocations(mainCatsSelected, subCatsSelected, attributesSelected, searchForChosen, toSelect, ", table(b.hours) hours ") + locationWhere;
-			String[] retval = {days, from, to};
-			return retval;
+    		String query = getLocations(mainCatsSelected, subCatsSelected, attributesSelected, searchForChosen, select, ", table(b.hours) hours ") + locationWhere;
+			return query;
     	} 
     	return null;
     }
@@ -114,7 +109,7 @@ public class hw3 implements ActionListener {
 						query += ", ";
 					} 
 				}
-				query += " WHERE ";
+				query += extraFrom + " WHERE ";
 				for(int i = 0; i < attributesSelected.size(); i++) {
 					query += "b.business_id = b" + Integer.toString(i) + ".business_id";
 					if(i != attributesSelected.size()-1) {
@@ -415,63 +410,33 @@ public class hw3 implements ActionListener {
         return details.size();
 	}
 	
-	private int handleDaysQuery(String daysQuery) {
+	private int handleOperationsQueries(String operationsQuery) {
+		if(operationsQuery == null) {
+			return 0;
+		}
 		ArrayList<String> days = new ArrayList<String>();
-		ResultSet rs = executeQuery(daysQuery);
+		ArrayList<String> froms = new ArrayList<String>();
+		ArrayList<String> tos = new ArrayList<String>();
+		ResultSet rs = executeQuery(operationsQuery);
 		if(rs != null) {
 			try {
 				while(rs.next()) {
 					days.add(rs.getString(1));
+					froms.add(rs.getString(2));
+					tos.add(rs.getString(3));
 				}
 				rs.close();
 			} catch (SQLException e) {
 				Util.handleSQLException(e);
 			}
 		}
-		ui.fillDays(days.toArray(new String[days.size()]));
-		return days.size();
-	}
-	
-	private int handleFromQuery(String fromQuery) {
-		ArrayList<String> froms = new ArrayList<String>();
-		ResultSet rs = executeQuery(fromQuery);
-		if(rs != null) {
-			try {
-				while(rs.next()) {
-					froms.add(rs.getString(1));
-				}
-				rs.close();
-			} catch (SQLException e) {
-				Util.handleSQLException(e);
-			}
-		}
-		ui.fillFroms(froms.toArray(new String[froms.size()]));
-		return froms.size();
-	}
-	private int handleToQuery(String toQuery) {
-		ArrayList<String> tos = new ArrayList<String>();
-		ResultSet rs = executeQuery(toQuery);
-		if(rs != null) {
-			try {
-				while(rs.next()) {
-					tos.add(rs.getString(1));
-				}
-				rs.close();
-			} catch (SQLException e) {
-				Util.handleSQLException(e);
-			}
-		}
-		ui.fillTos(tos.toArray(new String[tos.size()]));
-		return tos.size();
-	}
-	private int handleOperationsQueries(String[] operationsQueries) {
-		if(operationsQueries == null) {
-			return 0;
-		}
-		int days = handleDaysQuery(operationsQueries[0]);
-		int froms = handleFromQuery(operationsQueries[1]);
-		int tos = handleToQuery(operationsQueries[2]);
-		return days*froms*tos;
+		String[] toResults = Util.removeDuplicates(tos.toArray(new String[tos.size()]));
+		String[] fromResults = Util.removeDuplicates(froms.toArray(new String[froms.size()])); 
+		String[] daysResults = Util.removeDuplicates(days.toArray(new String[days.size()]));
+		ui.fillTos(toResults);
+		ui.fillFroms(fromResults);
+		ui.fillDays(daysResults);
+		return daysResults.length*fromResults.length*toResults.length;
 	}
 	
 	private int handleAttributesQuery(String attributesQuery) {

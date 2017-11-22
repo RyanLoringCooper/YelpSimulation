@@ -193,4 +193,17 @@ public class Util {
         l.add(s);
         return l;
     }
+
+	public static String[] removeDuplicates(String[] strs) {
+		if(strs != null && strs.length > 0) {
+			ArrayList<String> noDupes = new ArrayList<String>();
+			for(int i = 0; i < strs.length; i++) {
+				if(!noDupes.contains(strs[i])) {
+					noDupes.add(strs[i]);
+				}
+			}
+			return noDupes.toArray(new String[noDupes.size()]);
+		}
+		return null;
+	}
 }
