@@ -68,7 +68,8 @@ public class UserInterface extends JFrame {
     private JPanel getStatusBar() {
     	JPanel panel = new JPanel();
     	panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-    	statusLabel = new JLabel(statusLabelPretext + "subcategories.");
+		statusLabel = new JLabel(statusLabelPretext + "subcategories.");
+    	setStatusText();
     	panel.add(statusLabel);
     	return panel;
     }
@@ -135,6 +136,7 @@ public class UserInterface extends JFrame {
     	JPanel panel = new JPanel();
     	panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
     	panel.add(getButton(hw3.searchActionString));
+        panel.add(getButton(hw3.backActionString));
         panel.add(getButton(hw3.resetActionString));
         panel.add(getButton(hw3.closeActionString));
         return panel;
@@ -195,7 +197,7 @@ public class UserInterface extends JFrame {
         subCategoriesList.setLayoutOrientation(JList.VERTICAL);
         subCategoriesList.setVisibleRowCount(-1);
         subCategoriesScroller.setViewportView(subCategoriesList);
-        statusLabel.setText(statusLabelPretext + "attributes.");
+        setStatusText();
     }
 
     public void fillAttributes(String[] attrs) {
@@ -203,7 +205,7 @@ public class UserInterface extends JFrame {
         attributesList.setLayoutOrientation(JList.VERTICAL);
         attributesList.setVisibleRowCount(-1);
         attributesScroller.setViewportView(attributesList);
-        statusLabel.setText(statusLabelPretext + "locations.");
+        setStatusText();
     }
     
     public void fillLocations(String[] locs) {
@@ -212,7 +214,7 @@ public class UserInterface extends JFrame {
     	for(String loc : locs) {
     		locationDropdown.addItem(loc);
     	}
-    	statusLabel.setText(statusLabelPretext + "operating times.");
+    	setStatusText();
     }
     
     public void fillDays(String[] days) {
@@ -237,7 +239,6 @@ public class UserInterface extends JFrame {
     	for(String to : tos) {
     		toHoursDropdown.addItem(to);
     	}
-        statusLabel.setText(statusLabelPretext + "details.");
     }
 
     public void fillReviewsPopup(String[][] reviews) {
@@ -245,9 +246,38 @@ public class UserInterface extends JFrame {
     }
     
     public void reset() {
+    	String[] Any = { "Any" };
+    	fillDays(Any);
+    	fillFroms(Any);
+    	fillTos(Any);
     	fillSubcategories(new String[0]);
     	fillAttributes(new String[0]);
     	setDetailsTable(new String[0][0]);
         statusLabel.setText(statusLabelPretext + "subcategories.");
     }
+
+	public void setStatusText() {
+		switch(hw3.numSearches) {
+			case(0):
+				statusLabel.setText(statusLabelPretext + "subcategories.");
+				break;
+			case(1):
+				statusLabel.setText(statusLabelPretext + "attributes.");
+				break;
+			case(2):
+				statusLabel.setText(statusLabelPretext + "locations.");
+				break;
+			case(3):
+				statusLabel.setText(statusLabelPretext + "operating times.");
+				break;
+			case(4):
+				statusLabel.setText(statusLabelPretext + "details.");
+				break;
+			default:
+				hw3.numSearches = 0;
+				reset();
+				break;
+				
+		}
+	}
 }
